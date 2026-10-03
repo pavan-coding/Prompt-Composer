@@ -19,7 +19,7 @@ Write prompts for Claude Code in VS Code, in a rich Markdown editor, and never m
 npm install
 ```
 
-Then press **F5** to open the Extension Development Host on a sample workspace.
+Then run `npm run dev` (or Ctrl+F5 on **Run Extension (sample workspace)**) to open the Extension Development Host on a sample workspace. Plain F5 can hit a VS Code debugger bug ([microsoft/vscode#336233](https://github.com/microsoft/vscode/issues/336233)) that closes the window right away.
 
 - [docs/TESTING.md](docs/TESTING.md): step-by-step manual checks, and how to run the automated suites.
 - [docs/TEST-CASES.md](docs/TEST-CASES.md): every test case and its last result.
@@ -28,6 +28,7 @@ Then press **F5** to open the Extension Development Host on a sample workspace.
 
 | Script | |
 |---|---|
+| `npm run dev` | Build and open VS Code with the extension on the sample workspace (no debugger) |
 | `npm run build` / `npm run watch` | Build the extension and webviews |
 | `npm run typecheck` | TypeScript, host and webviews |
 | `npm run test:unit` | Vitest |

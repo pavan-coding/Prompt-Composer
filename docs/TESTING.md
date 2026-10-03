@@ -13,10 +13,18 @@ This guide is for trying the extension by hand in VS Code's **Extension Developm
    npm install
    ```
 
-3. Press **F5**, or open Run and Debug and pick **Run Extension (sample workspace)**.
-   - The first run creates `sample-workspace/` and builds the extension, then a second VS Code window opens on `sample-workspace/ws`.
-   - That window's title starts with **[Extension Development Host]**. Do all the testing there.
-   - To try it on one of your own projects, pick **Run Extension (open any folder)** and open a folder in the new window.
+3. Start the test window, either way:
+   - **From a terminal (recommended):**
+
+     ```bash
+     npm run dev
+     ```
+
+     This builds the extension and opens a VS Code window with it loaded on `sample-workspace/ws`. For another folder, run `npm run dev -- "D:\path\to\project"`.
+   - **From VS Code:** open Run and Debug, pick **Run Extension (sample workspace)** and press **Ctrl+F5** (Run Without Debugging).
+     - Plain **F5** (with the debugger) can make the new window close by itself about a second after it opens. That's a VS Code bug in the debugger's start-up ([microsoft/vscode#336233](https://github.com/microsoft/vscode/issues/336233), exit code 134), not this extension.
+     - If you need breakpoints, press F5 again; the crash is intermittent.
+   - **What happens:** the first run creates `sample-workspace/` and builds the extension. The new window's title starts with **[Extension Development Host]**. Do all the testing there.
 
 **What's in the sample workspace:**
 - an ordinary project (`src/`, `docs/`, `README.md`)

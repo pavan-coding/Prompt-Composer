@@ -596,6 +596,7 @@
     }
   },
   "scripts": {
+    "dev": "node scripts/launch-dev.mjs",
     "build": "node esbuild.mjs",
     "watch": "node esbuild.mjs --watch",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p src/webview/tsconfig.json --noEmit",
