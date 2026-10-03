@@ -47,11 +47,12 @@ If a feature isn't needed to compose and find prompts, it's out.
 |---|---|---|
 | Where prompts live | `.prompt-composer/` in the folder VS Code is opened on (§4, F0) | VS Code is always opened on one project folder; multi-root workspaces aren't supported. The folder sits next to the code the prompts are about, so `@paths` and images resolve. It's created on first use. If no folder is open, the panel says "Open a folder to use Prompt Composer". |
 | Keeping it out of git | Prompt Composer writes `.prompt-composer/.gitignore` containing `*` | That one file makes git ignore the whole folder, itself included. Your project's own `.gitignore` is never edited, so there's no diff and no merge conflict. A setting can switch this off for teams that want to commit prompts. |
+| Keeping it out of sight in VS Code | The extension contributes a default `files.exclude` entry, `**/.prompt-composer` (`contributes.configurationDefaults`) | VS Code hides the folder in the Explorer, Search and Quick Open, and nothing is written to your `settings.json`. VS Code merges it with its own defaults and with any `files.exclude` you set yourself, and drops it when the extension is disabled or uninstalled. To see the folder anyway, set `"files.exclude": { "**/.prompt-composer": false }`. The panel is how you browse prompts. |
 | The panel | Its own icon in the Activity Bar, opening a **webview view** in the Primary Side Bar | A webview gives an inline search box and grouped, rich rows. It's styled with VS Code's own colours and codicons, so it looks native. |
 | Panel title buttons | New Prompt, Collapse All, More (native `view/title` menu) | These are standard VS Code view buttons. |
 | Right-click menu in the panel | VS Code's real context menu, via the `webview/context` menu and `data-vscode-context` | Native menus, keyboard support and theming, without drawing our own. |
 | The prompt editor | One **webview panel** per open prompt, not a custom text editor | **The tab shows the prompt's title** (a custom editor tab can only show the file name). **Undo is Tiptap's alone**, with no clash with VS Code's document undo. **Saving is left to the user**, the same as any VS Code file: Ctrl+S, plus VS Code's own `files.autoSave` setting when it's on (§4, F0 "Saving"). Webview panels have no built-in dirty state, so the extension supplies it: a dot on the tab, a save prompt when a changed prompt is closed, and unsaved changes that survive a reload. Open prompts come back after a restart (`registerWebviewPanelSerializer`). |
-| Opening a prompt file from the Explorer | A custom editor registered only for `.prompt-composer/*/*.md` (month folders, one level) that hands the file to the prompt editor | Clicking a prompt file anywhere still opens the composer. Every other `.md` in your project stays a normal file. |
+| Opening a prompt file directly | A custom editor registered only for `.prompt-composer/*/*.md` (month folders, one level) that hands the file to the prompt editor | Opening a prompt file any other way (a link, File → Open, the Explorer if you un-hide the folder) still opens the composer. Every other `.md` in your project stays a normal file. |
 | Look and feel | **Layout and type from Tiptap; colours from your VS Code theme.** Tiptap's Simple Editor gives the layout: DM Sans for text, Inter for menus, Lucide line icons, the 648px column and the spacing. Every colour comes from the active VS Code theme (`--vscode-*` variables), so with Dark Modern you get exactly Dark Modern. An optional setting switches to Tiptap's own palette. | It looks like the Tiptap you've seen online, but blends in with VS Code and any theme. Fonts and icons ship inside the extension (~125 KB of fonts), so it works offline and under the webview's strict security rules. |
 | Floating surfaces | The toolbar, bubble menu, `/` menu, `@` picker and hover card are lifted off the page using only theme colours. Their fill is the theme's widget colour mixed 10% toward the text colour (Dark Modern: `#313131` on a `#1F1F1F` editor). They also get the theme's widget border (`rgba(204,204,204,0.2)`) and widget shadow. Light themes keep the light widget fill and rely on border and shadow. | Dark Modern's own widget colour (`#202020`) is almost identical to its editor (`#1F1F1F`), so a menu painted with it disappears. |
 | Prefer native VS Code UI | Use title-bar buttons, status bar items, quick input, notifications, native context menus and native file pickers | Less webview UI means less to build, a smaller bundle and a familiar feel. |
@@ -182,16 +183,16 @@ my-app/                                   ← the folder VS Code is opened on
 - **Right-click** gives VS Code's native menu:
   - Open, Open to the Side
   - Copy as Prompt, Copy @Path for Claude
-  - Pin / Unpin, Duplicate, Reveal in Explorer
+  - Pin / Unpin, Duplicate, Reveal in File Explorer (Reveal in Finder on macOS). VS Code's own Explorer can't show the folder, so this opens your system's file manager with the file selected.
   - Delete
 - **When there are no prompts yet**, a welcome message and a New Prompt button show.
 
-**In the Explorer**, `.prompt-composer/` appears dimmed, the way VS Code shows git-ignored files. The `@` picker never offers files from it.
+**VS Code doesn't show `.prompt-composer/`** in the Explorer, Search or Quick Open (§2, "Keeping it out of sight"). The `@` picker never offers files from it. The panel's ⋯ menu has **Reveal Prompts Folder in File Explorer**, which opens your system's file manager inside the folder.
 
 **Free extras from VS Code:**
 
 - **Version history (limitation):** VS Code's **Local History** only records saves made through VS Code's own editors. Prompt Composer writes files directly (atomically), so the Timeline doesn't list prompt saves (`SV-14`).
-- **VS Code's Search** ignores the folder (it respects `.gitignore`), so prompts don't clutter code searches. The panel's search is the place to find them.
+- **VS Code's Search** leaves the folder out (it follows `files.exclude`), so prompts don't clutter code searches. The panel's search is the place to find them.
 
 ### F1. Markdown editing (Tiptap)
 

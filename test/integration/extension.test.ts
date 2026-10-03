@@ -194,6 +194,27 @@ suite('Storage', () => {
     assert.ok(await api.editors.save(doc));
     assert.equal(fs.readFileSync(path.join(store(), ...rel.split('/')), 'utf8'), '# Deleted outside\n\nstill here\n');
   });
+
+  test('ST-16 the prompts folder is hidden in VS Code without writing settings; the panel still sees changes in it', async () => {
+    const files = vscode.workspace.getConfiguration('files');
+    const exclude = files.inspect<Record<string, boolean>>('exclude')!;
+    assert.equal(exclude.defaultValue?.['**/.prompt-composer'], true, 'contributed default');
+    assert.equal(exclude.defaultValue?.['**/.git'], true, "VS Code's own defaults are kept");
+    assert.equal(exclude.globalValue?.['**/.prompt-composer'], undefined, 'nothing in user settings');
+    assert.equal(exclude.workspaceValue?.['**/.prompt-composer'], undefined, 'nothing in workspace settings');
+    assert.equal(files.get<Record<string, boolean>>('exclude')?.['**/.prompt-composer'], true, 'in effect');
+
+    const doc = await saveNew('# Hidden folder\n');
+    const found = await vscode.workspace.findFiles('**/*.md');
+    assert.ok(found.some((u) => u.fsPath.endsWith('README.md')), 'other Markdown files are found');
+    assert.ok(!found.some((u) => u.fsPath.includes(`${path.sep}.prompt-composer${path.sep}`)), 'search and Quick Open leave prompts out');
+
+    // VS Code still reports changes inside the hidden folder
+    await api.library.ensureLoaded();
+    const rel = `${doc.rel!.split('/')[0]}/01-0000-written-outside.md`;
+    fs.writeFileSync(path.join(store(), ...rel.split('/')), '# Written outside\n');
+    await waitFor(() => api.library.get(rel), 'library to notice the new file');
+  });
 });
 
 suite('Saving', () => {
@@ -506,6 +527,22 @@ suite('Copy commands', () => {
     const doc = await saveNew('# Path me\n');
     await vscode.commands.executeCommand('promptComposer.copyPath', { promptId: doc.rel });
     assert.equal(await vscode.env.clipboard.readText(), `@.prompt-composer/${doc.rel}`);
+  });
+
+  test('CP-03 CP-05 Reveal shows the prompt, or the newest month of the folder, in the OS file manager', async () => {
+    const doc = await saveNew('# Reveal me\n');
+    const shown: string[] = [];
+    const real = api.shell.reveal;
+    api.shell.reveal = async (uri) => { shown.push(uri.fsPath); };
+    try {
+      for (const id of ['revealInOS', 'revealInFinder']) await vscode.commands.executeCommand(`promptComposer.${id}`, { promptId: doc.rel });
+      for (const id of ['revealFolder', 'revealFolderInFinder']) await vscode.commands.executeCommand(`promptComposer.${id}`);
+    } finally {
+      api.shell.reveal = real;
+    }
+    const file = path.join(store(), ...doc.rel!.split('/'));
+    const month = path.join(store(), monthDirs().sort().at(-1)!);
+    assert.deepEqual(shown, [file, file, month, month]);
   });
 });
 

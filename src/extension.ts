@@ -12,7 +12,7 @@ import { FileIndex } from './mentions/fileIndex';
 import { ImageStore } from './images/imageStore';
 import { PromptStatusBar } from './status/statusBar';
 import { imagePaths, titleOf } from './common/markdownText';
-import { STORE_DIR } from './common/naming';
+import { MONTH_DIR_RE, STORE_DIR } from './common/naming';
 import { startTestBridge } from './testBridge';
 
 /** Context passed to commands from the panel's right-click menu (data-vscode-context). */
@@ -27,6 +27,8 @@ export interface PromptComposerApi {
   index: FileIndex;
   images: ImageStore;
   statusBar: PromptStatusBar;
+  /** Shows a file or folder in the OS file manager (VS Code hides the prompts folder). Tests replace it. */
+  shell: { reveal(uri: vscode.Uri): Thenable<unknown> };
   deletePrompt(id: string, opts?: { confirm?: boolean; deleteImages?: boolean }): Promise<void>;
 }
 
@@ -41,7 +43,7 @@ export function activate(context: vscode.ExtensionContext): PromptComposerApi | 
     // No folder: the panel explains, commands say why they can't run.
     const view = new LibraryView(context, undefined, undefined, { newPrompt: () => void noFolder(), deletePrompt: async () => undefined });
     context.subscriptions.push(view, vscode.window.registerWebviewViewProvider(LIBRARY_VIEW_ID, view));
-    for (const id of ['newPrompt', 'focusSearch', 'revealFolder', 'collapseAll', 'showAllMonths', 'hideOlderMonths', 'newTextFile']) {
+    for (const id of ['newPrompt', 'focusSearch', 'revealFolder', 'revealFolderInFinder', 'collapseAll', 'showAllMonths', 'hideOlderMonths', 'newTextFile']) {
       context.subscriptions.push(vscode.commands.registerCommand(`promptComposer.${id}`, () =>
         id === 'newTextFile' ? vscode.commands.executeCommand('workbench.action.files.newUntitledFile') : noFolder()));
     }
@@ -137,10 +139,17 @@ export function activate(context: vscode.ExtensionContext): PromptComposerApi | 
   reg('showAllMonths', () => setShowAll(true));
   reg('hideOlderMonths', () => setShowAll(false));
   reg('focusSearch', () => libraryView.focusSearch());
-  reg('revealFolder', async () => {
+  const shell = { reveal: (uri: vscode.Uri): Thenable<unknown> => vscode.commands.executeCommand('revealFileInOS', uri) };
+  // The file manager opens inside the folder, on the newest month (Finder hides dot-folders, so selecting
+  // .prompt-composer itself could show nothing).
+  const revealFolder = async () => {
     await store.ensureRoot();
-    await vscode.commands.executeCommand('revealInExplorer', vscode.Uri.file(store.root));
-  });
+    const entries = await vscode.workspace.fs.readDirectory(vscode.Uri.file(store.root)).then(undefined, () => []);
+    const months = entries.filter(([n, t]) => t & vscode.FileType.Directory && MONTH_DIR_RE.test(n)).map(([n]) => n).sort();
+    await shell.reveal(vscode.Uri.file(months.length ? path.join(store.root, months[months.length - 1]) : store.root));
+  };
+  reg('revealFolder', revealFolder);
+  reg('revealFolderInFinder', revealFolder);
   reg('open', (ctx?: RowContext) => {
     const id = idFor(ctx);
     if (!id) return;
@@ -179,10 +188,12 @@ export function activate(context: vscode.ExtensionContext): PromptComposerApi | 
     library.endWrite(rel, text, st);
     await editors.open(rel, { focus: true });
   });
-  reg('revealInExplorer', async (ctx?: RowContext) => {
+  const revealPrompt = async (ctx?: RowContext) => {
     const id = idFor(ctx);
-    if (id && !id.startsWith('doc:')) await vscode.commands.executeCommand('revealInExplorer', vscode.Uri.file(store.absOf(id)));
-  });
+    if (id && !id.startsWith('doc:')) await shell.reveal(vscode.Uri.file(store.absOf(id)));
+  };
+  reg('revealInOS', revealPrompt);
+  reg('revealInFinder', revealPrompt);
   reg('delete', (ctx?: RowContext) => { const id = idFor(ctx); if (id) return deletePrompt(id); });
   reg('save', () => editors.saveActive());
   reg('revert', () => { const d = editors.activeDoc; if (d) return editors.revert(d); });
@@ -198,7 +209,7 @@ export function activate(context: vscode.ExtensionContext): PromptComposerApi | 
   // Swallows workbench shortcuts (Ctrl+B, Ctrl+E…) while the editor has focus; the editor handles the key itself.
   reg('noop', () => undefined);
 
-  const api: PromptComposerApi = { store, library, editors, libraryView, untitled, index, images, statusBar, deletePrompt };
+  const api: PromptComposerApi = { store, library, editors, libraryView, untitled, index, images, statusBar, shell, deletePrompt };
   if (context.extensionMode !== vscode.ExtensionMode.Production && process.env.PROMPT_COMPOSER_E2E_PORT) {
     context.subscriptions.push(startTestBridge(api, Number(process.env.PROMPT_COMPOSER_E2E_PORT), log));
   }

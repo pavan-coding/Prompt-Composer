@@ -53,18 +53,19 @@ This guide is for trying the extension by hand in VS Code's **Extension Developm
 | 2 | Double-click empty space in the panel | A new tab **Untitled prompt** with the caret ready and the hint "Write your prompt… Type / for commands, @ to mention a file" | ED-01 |
 | 3 | Type `# My first prompt` | The tab title changes to "My first prompt" as you type | ED-02 |
 | 4 | Look at the tab and the panel | A filled dot as the tab's icon; in the panel, under **October 2026 → Today**, an italic row with a dot (not saved yet) | SV-01, PN-10 |
-| 5 | Press **Ctrl+S** | The dot goes away. `.prompt-composer/` appears in the Explorer (dimmed) with `.gitignore` (containing `*`) and `2026-10/DD-HHmm-my-first-prompt.md` | ST-01, ST-04 |
+| 5 | Press **Ctrl+S** | The dot goes away. The Explorer still doesn't show `.prompt-composer/`: VS Code hides it, and nothing was added to your settings. Panel **⋯ → Reveal Prompts Folder in File Explorer** shows it on disk: `.gitignore` (containing `*`) and `2026-10/DD-HHmm-my-first-prompt.md` | ST-01, ST-04, ST-16, CP-05 |
 | 6 | Change the heading to `# Renamed` and save | The tab shows "Renamed"; the file name doesn't change | ST-07 |
 | 7 | Make two more prompts, then single-click one in the panel, then another | Single-clicks reuse one *preview* tab | PN-06 |
 | 8 | Double-click a prompt row | It opens as a normal tab, caret inside | PN-06 |
 | 9 | Type in the search box: a word from a prompt's body, or `@src/server` | "N prompts found", each prompt with its matching line highlighted. **Esc** clears; **Enter** opens the first | PN-05 |
-| 10 | Right-click a prompt | VS Code's own menu: Open, Open to the Side, Copy as Prompt, Copy @Path for Claude, Pin, Duplicate, Reveal in Explorer, Delete | PN-07 |
+| 10 | Right-click a prompt | VS Code's own menu: Open, Open to the Side, Copy as Prompt, Copy @Path for Claude, Pin, Duplicate, Reveal in File Explorer, Delete | PN-07 |
 | 11 | Pin one | A **Pinned** group appears at the top (it still shows under its day too) | PN-07 |
 | 12 | Duplicate one | A new prompt with the same text opens | ST-12 |
 | 13 | Delete one (right-click → Delete) | A confirmation; the file goes to the Recycle Bin and disappears from the panel. If it had images no other prompt uses, you're offered to delete those too | ST-11, IM-07 |
 | 14 | **⋯** in the panel title → **Show All Months** | Older months appear, folded, with counts (create an older one by copying a prompt file into a folder like `.prompt-composer/2026-08/`). **⋯ → Show Current Month Only** hides them again | PN-03, PN-04 |
 | 15 | Click **Collapse All** in the panel title | Every group folds; folds are remembered after Ctrl+R | PN-08 |
 | 16 | Click a row, then use ↑/↓, Enter, Delete | Keyboard navigation works | PN-12 |
+| 17 | **Ctrl+P** and type part of a prompt's file name; **Ctrl+Shift+F** for a word in a prompt | Neither lists prompt files: VS Code leaves `.prompt-composer/` out of Quick Open and Search. The panel's search finds them | ST-16 |
 
 ## 3. Saving (left to you)
 
@@ -79,7 +80,7 @@ This guide is for trying the extension by hand in VS Code's **Extension Developm
 | 7 | `files.autoSave` = `onFocusChange`, edit, then click the panel's search box | Saved as soon as focus leaves the prompt | SV-04 |
 | 8 | `files.autoSave` = `onWindowChange`, edit, then switch to another app (Alt+Tab) | Saved when the window loses focus (automated tests can't check this one, so please do) | SV-05 |
 | 9 | Open a prompt and close it without editing | The file's modified time doesn't change | SV-12 |
-| 10 | Right-click the file in the Explorer → Open Timeline | Local History: the extension writes files directly, so the Timeline doesn't list these saves (a known limitation) | SV-14 |
+| 10 | In a prompt tab, editor title → **Open as Text**, then open the **Timeline** view | Local History: the extension writes files directly, so the Timeline doesn't list these saves (a known limitation) | SV-14 |
 
 ## 4. Starting prompts from the tab bar
 
@@ -148,12 +149,12 @@ This guide is for trying the extension by hand in VS Code's **Extension Developm
 
 | # | Do this | You should see | ID |
 |---|---|---|---|
-| 1 | In the Explorer, open `.prompt-composer/2026-10/<a prompt>.md` | It opens in the composer (tab titled with the prompt's title), not as text | CE-01 |
+| 1 | **File → Open File…** (Ctrl+O) and pick `.prompt-composer/2026-10/<a prompt>.md` | It opens in the composer (tab titled with the prompt's title), not as text | CE-01 |
 | 2 | Open `README.md` | It opens as a normal text file | CE-02 |
 | 3 | In a prompt tab, editor title → **Open as Text** | The `.md` opens beside it, read-only | CE-03 |
 | 4 | Open a prompt that's already open | Its tab is focused; no second tab | CE-04 |
 | 5 | Right-click a prompt → **Copy @Path for Claude** | `@.prompt-composer/2026-10/<file>.md` on the clipboard | CP-02 |
-| 6 | Right-click → **Reveal in Explorer**; panel **⋯** → **Reveal Prompts Folder in Explorer** | The file / folder is selected in the Explorer | CP-03, CP-05 |
+| 6 | Right-click → **Reveal in File Explorer**; panel **⋯** → **Reveal Prompts Folder in File Explorer** | Windows File Explorer opens with the prompt selected / inside `.prompt-composer/` on the newest month | CP-03, CP-05 |
 | 7 | Run the debug window with **no folder open** (File → Close Folder) | The panel says "Open a folder to use Prompt Composer"; New Prompt asks you to open a folder | ST-14 |
 
 ---
@@ -163,8 +164,8 @@ This guide is for trying the extension by hand in VS Code's **Extension Developm
 | Command | What it runs | Last result |
 |---|---|---|
 | `npm run test:unit` | Vitest, in Node: Markdown round trips, naming, titles/search text, library model, fuzzy matching, speed | 84 passed |
-| `npm run test:integration` | Mocha inside a real Extension Development Host on a copy of the fixture workspace | 50 passed |
-| `npm run test:e2e` | Playwright driving a real VS Code window: typing, menus, dialogs, double-clicks, paste, reload, themes. Screenshots go to `test-results/e2e/<ID>/` | 39 passed, 1 skipped (SV-05: Playwright pretends the window always has focus, so section 3 row 8 is manual) |
+| `npm run test:integration` | Mocha inside a real Extension Development Host on a copy of the fixture workspace | 52 passed |
+| `npm run test:e2e` | Playwright driving a real VS Code window: typing, menus, dialogs, double-clicks, paste, reload, themes. Screenshots go to `test-results/e2e/<ID>/` | 40 passed, 1 skipped (SV-05: Playwright pretends the window always has focus, so section 3 row 8 is manual) |
 | `npm run package` then `node test/e2e/vsix-smoke.mjs` | Installs the packaged `.vsix` into a throwaway profile and makes and saves a prompt with it | passed (441 KB package) |
 | `npm test` | Unit, integration and end-to-end | |
 

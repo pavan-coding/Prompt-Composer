@@ -12,7 +12,7 @@ Automated tests include the case ID in their name.
 
 **Result** is filled in by the last full run (2026-10-03, Windows 11, VS Code 1.140): ✅ pass, ❌ fail, ⚠️ works but misses a target, 👤 manual only.
 
-Totals: 84 unit tests, 50 integration tests, 39 end-to-end tests passed, 1 end-to-end test skipped (SV-05, see its row).
+Totals: 84 unit tests, 52 integration tests, 40 end-to-end tests passed, 1 end-to-end test skipped (SV-05, see its row).
 
 ## ST: storage on disk
 
@@ -32,7 +32,8 @@ Totals: 84 unit tests, 50 integration tests, 39 end-to-end tests passed, 1 end-t
 | ST-12 | Duplicate | New file named from now and the same title, same content; opens it | I | ✅ |
 | ST-13 | Pins | Kept across reloads; dropped when the prompt is deleted | I | ✅ |
 | ST-14 | No folder open | Panel shows "Open a folder to use Prompt Composer"; New Prompt explains why it can't start | I | ✅ |
-| ST-15 | File deleted outside (Explorer) | Disappears from the panel; if it's open, the tab stays with its content and saving recreates it | I | ✅ |
+| ST-15 | File deleted outside | Disappears from the panel; if it's open, the tab stays with its content and saving recreates it | I | ✅ |
+| ST-16 | Folder hidden in VS Code | `.prompt-composer/` isn't shown in the Explorer, Search or Quick Open. It's a contributed `files.exclude` default, so nothing is written to settings and VS Code's own excludes stay. The panel still sees files added or deleted in it | I, E | ✅ |
 
 ## MD: Markdown round trip
 
@@ -68,7 +69,7 @@ Totals: 84 unit tests, 50 integration tests, 39 end-to-end tests passed, 1 end-t
 | PN-04 | Show All Months | ⋯ menu toggles the setting; older months appear folded with counts; turning it off hides them again | I, E | ✅ |
 | PN-05 | Search | Matches title, body and `@paths` across all months; shows a count, each prompt, and its matching line with the match highlighted; Esc clears; Enter opens the first result | U, E | ✅ |
 | PN-06 | Click and double-click | Click opens a preview tab (reused by the next click); double-click opens a normal tab with the caret in it; double-click on empty space starts a new prompt | E | ✅ |
-| PN-07 | Context menu | Open, Open to the Side, Copy as Prompt, Copy @Path for Claude, Pin/Unpin, Duplicate, Reveal in Explorer, Delete, all working | I, E | ✅ |
+| PN-07 | Context menu | Open, Open to the Side, Copy as Prompt, Copy @Path for Claude, Pin/Unpin, Duplicate, Reveal in File Explorer, Delete, all working | I, E | ✅ |
 | PN-08 | Collapse All and fold state | Title-bar button folds every group; folds are remembered after a reload | E | ✅ |
 | PN-09 | Open and dirty markers | The open prompt is highlighted; a prompt with unsaved changes shows a dot | E | ✅ |
 | PN-10 | Unsaved new prompt | Appears under Today with a dot once it has content | I, E | ✅ |
@@ -181,9 +182,9 @@ Totals: 84 unit tests, 50 integration tests, 39 end-to-end tests passed, 1 end-t
 |---|---|---|---|---|
 | CP-01 | Copy as Prompt | Editor-title button and panel menu copy the Markdown | I | ✅ |
 | CP-02 | Copy @Path for Claude | `@.prompt-composer/YYYY-MM/<file>.md` | I | ✅ |
-| CP-03 | Reveal in Explorer | Selects the file in the Explorer | M | 👤 manual (Explorer selection) |
+| CP-03 | Reveal in File Explorer (Reveal in Finder on macOS) | Opens the system file manager with the prompt selected | I | ✅ (the file manager window itself: [TESTING.md](TESTING.md) §8) |
 | CP-04 | Status bar | Mentions, images and "N words · ~T tokens" for the active prompt; hidden otherwise | E | ✅ |
-| CP-05 | Reveal Prompts Folder | ⋯ menu reveals `.prompt-composer/` in the Explorer | M | 👤 manual (Explorer selection) |
+| CP-05 | Reveal Prompts Folder in File Explorer | ⋯ menu opens the system file manager inside `.prompt-composer/`, on the newest month | I | ✅ (the file manager window itself: [TESTING.md](TESTING.md) §8) |
 
 ## PF: performance
 

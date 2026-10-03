@@ -72,7 +72,12 @@
       },
       {
         "command": "promptComposer.revealFolder",
-        "title": "Reveal Prompts Folder in Explorer",
+        "title": "Reveal Prompts Folder in File Explorer",
+        "category": "Prompt Composer"
+      },
+      {
+        "command": "promptComposer.revealFolderInFinder",
+        "title": "Reveal Prompts Folder in Finder",
         "category": "Prompt Composer"
       },
       {
@@ -117,8 +122,13 @@
         "category": "Prompt Composer"
       },
       {
-        "command": "promptComposer.revealInExplorer",
-        "title": "Reveal in Explorer",
+        "command": "promptComposer.revealInOS",
+        "title": "Reveal in File Explorer",
+        "category": "Prompt Composer"
+      },
+      {
+        "command": "promptComposer.revealInFinder",
+        "title": "Reveal in Finder",
         "category": "Prompt Composer"
       },
       {
@@ -192,7 +202,12 @@
         },
         {
           "command": "promptComposer.revealFolder",
-          "when": "view == promptComposer.library",
+          "when": "view == promptComposer.library && !isMac",
+          "group": "2_folder@1"
+        },
+        {
+          "command": "promptComposer.revealFolderInFinder",
+          "when": "view == promptComposer.library && isMac",
           "group": "2_folder@1"
         }
       ],
@@ -233,8 +248,13 @@
           "group": "3_manage@2"
         },
         {
-          "command": "promptComposer.revealInExplorer",
-          "when": "webviewId == 'promptComposer.library' && webviewSection == 'prompt' && promptSaved",
+          "command": "promptComposer.revealInOS",
+          "when": "webviewId == 'promptComposer.library' && webviewSection == 'prompt' && promptSaved && !isMac",
+          "group": "3_manage@3"
+        },
+        {
+          "command": "promptComposer.revealInFinder",
+          "when": "webviewId == 'promptComposer.library' && webviewSection == 'prompt' && promptSaved && isMac",
           "group": "3_manage@3"
         },
         {
@@ -291,8 +311,20 @@
           "when": "false"
         },
         {
-          "command": "promptComposer.revealInExplorer",
+          "command": "promptComposer.revealInOS",
           "when": "false"
+        },
+        {
+          "command": "promptComposer.revealInFinder",
+          "when": "false"
+        },
+        {
+          "command": "promptComposer.revealFolder",
+          "when": "!isMac"
+        },
+        {
+          "command": "promptComposer.revealFolderInFinder",
+          "when": "isMac"
         },
         {
           "command": "promptComposer.delete",
@@ -590,6 +622,9 @@
       }
     },
     "configurationDefaults": {
+      "files.exclude": {
+        "**/.prompt-composer": true
+      },
       "files.readonlyInclude": {
         "**/.prompt-composer/**": true
       }

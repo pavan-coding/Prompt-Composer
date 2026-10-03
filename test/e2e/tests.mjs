@@ -616,7 +616,7 @@ export const tests = [
       await row.waitFor({ timeout: 8000 });
       const labels = await contextMenu(vsc, row);
       await shot('menu');
-      for (const l of ['Open', 'Open to the Side', 'Copy as Prompt', 'Copy @Path for Claude', 'Pin', 'Duplicate', 'Reveal in Explorer', 'Delete']) {
+      for (const l of ['Open', 'Open to the Side', 'Copy as Prompt', 'Copy @Path for Claude', 'Pin', 'Duplicate', 'Reveal in File Explorer', 'Delete']) {
         assert.ok(labels.includes(l), `menu has ${l}: ${labels}`);
       }
       await vsc.page.keyboard.press('Escape');
@@ -787,6 +787,19 @@ export const tests = [
         await vsc.app.evaluate(({ BrowserWindow }) => { globalThis.__pcOther?.destroy(); const w = BrowserWindow.getAllWindows()[0]; w.setAlwaysOnTop(true); w.focus(); w.setAlwaysOnTop(false); });
         await setting(vsc, 'files', 'autoSave', undefined);
       }
+    },
+  },
+  {
+    name: 'ST-16 the Explorer does not show .prompt-composer',
+    async fn({ vsc, shot }) {
+      await openFile(vsc, `${monthKey}/${pad(today.getDate())}-0700-explorer-check.md`, '# Explorer check\n');
+      await vsc.command('workbench.view.explorer');
+      const names = vsc.page.locator('.explorer-folders-view .monaco-list-row .label-name');
+      await names.first().waitFor({ timeout: 8000 });
+      const listed = await names.allInnerTexts();
+      await shot('explorer');
+      assert.ok(listed.includes('README.md') && listed.includes('src'), `workspace files are listed: ${listed}`);
+      assert.ok(!listed.includes('.prompt-composer'), `the prompts folder is hidden: ${listed}`);
     },
   },
   {

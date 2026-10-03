@@ -9,7 +9,7 @@ Write prompts for Claude Code in VS Code, in a rich Markdown editor, and never m
   - `@` mentions of any file or folder, symlinks included
   - pasted screenshots
   - `/` commands, a bubble menu, moving blocks with Alt+↑/↓
-- **A searchable library:** prompts are saved in `.prompt-composer/YYYY-MM/` in your project (git-ignored automatically). The panel lists Pinned prompts and this month by day, and its search covers every month.
+- **A searchable library:** prompts are saved in `.prompt-composer/YYYY-MM/` in your project, git-ignored and hidden from VS Code's Explorer, Search and Quick Open automatically. The panel lists Pinned prompts and this month by day, and its search covers every month.
 - **Plain Markdown on disk**, with `@path` mentions Claude Code understands, and **Copy as Prompt** turns pasted images into `@paths` too.
 - **Saving works like any VS Code file:** Ctrl+S, or VS Code's own Auto Save.
 
@@ -51,3 +51,8 @@ Then run `npm run dev` (or Ctrl+F5 on **Run Extension (sample workspace)**) to o
 | `promptComposer.gitignore` | on | Write `.prompt-composer/.gitignore` |
 | `promptComposer.mentions.exclude` | `.git`, `node_modules` | Left out of `@` suggestions, besides `files.exclude` |
 | `promptComposer.mentions.maxEntries` | 200000 | Size cap for the `@` index |
+
+Prompt Composer also changes two VS Code **defaults**. Nothing is written to your `settings.json`, and both go away when the extension is disabled:
+
+- `files.exclude` gets `**/.prompt-composer`, which hides the folder. To see it, add `"files.exclude": { "**/.prompt-composer": false }` to your settings.
+- `files.readonlyInclude` gets `**/.prompt-composer/**`, so **Open as Text** shows a prompt read-only.
