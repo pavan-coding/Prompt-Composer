@@ -169,7 +169,7 @@ my-app/                                   ← the folder VS Code is opened on
   - **Pinned**, a separate group at the top, for prompts you keep coming back to (from any month).
   - **The current month**, by day: Today, Yesterday, then "Wed, Oct 1". Inside each day, prompts are newest first, each showing its title and time.
 - **Older months are never listed unless you ask.** The panel's **⋯** menu has a **Show All Months** toggle.
-  - It's VS Code's native toggled menu item, with a check mark, bound to the setting `promptComposer.panel.showAllMonths` (default off).
+  - It's a native menu item bound to the setting `promptComposer.panel.showAllMonths` (default off). Extensions can't put a check mark on menu items, so the menu shows **Show All Months** when it's off and **Show Current Month Only** when it's on.
   - When it's on, older months appear below the current one (October 2026, September 2026…), each with a count badge, starting folded.
   - When it's off, a quiet line at the bottom says "Older months are hidden. Search finds every prompt."
 - **Search always covers every month**, whatever Show All Months is set to. Results from older months appear grouped under their month.
@@ -190,7 +190,7 @@ my-app/                                   ← the folder VS Code is opened on
 
 **Free extras from VS Code:**
 
-- **Version history:** VS Code's **Local History** (Timeline view) keeps earlier versions of files saved through VS Code's editors. Whether it also records the extension's writes is checked in testing (`TC SV-14`); if it doesn't, the Timeline simply shows fewer entries.
+- **Version history (limitation):** VS Code's **Local History** only records saves made through VS Code's own editors. Prompt Composer writes files directly (atomically), so the Timeline doesn't list prompt saves (`SV-14`).
 - **VS Code's Search** ignores the folder (it respects `.gitignore`), so prompts don't clutter code searches. The panel's search is the place to find them.
 
 ### F1. Markdown editing (Tiptap)
@@ -302,7 +302,11 @@ More space is the user's choice: press Enter again. Empty lines are kept in the 
   - Hovering a link shows its URL and "Follow link (Ctrl + click)".
   - ProseMirror's own Ctrl+click behaviour (select the whole block and draw a box around it) is turned off.
 
-**Unknown syntax is never lost.** Front matter, raw HTML, tables and footnotes stay byte-for-byte as an editable "raw" block.
+**Unknown syntax is never lost.**
+- Front matter, tables, link definitions and footnotes stay byte-for-byte as an editable "raw" block.
+- HTML and XML-style blocks (`<instructions>` … `</instructions>`, common in prompts) are plain text lines, edited and saved exactly as typed.
+- Line breaks inside a paragraph are written as plain new lines, not backslashes.
+- Escaping is added only when a line would otherwise read back differently, so prompts stay readable for Claude.
 
 **Rules for the file on disk:**
 
@@ -402,7 +406,7 @@ Only Prompt Composer writes into `.prompt-composer/`, which keeps this simple:
 
 - **No live sync with outside edits** is needed for prompts: no agent or other tool edits them.
 - **Undo/redo belongs to Tiptap** inside the prompt editor. With no VS Code text document in between, there's one undo stack and nothing to reconcile.
-- **"Open as text"** (editor-title button) opens the prompt's `.md` in VS Code's normal text editor, read-only, so there are never two writers.
+- **"Open as text"** (editor-title button) opens the prompt's `.md` in VS Code's normal text editor, read-only, so there are never two writers. Prompt files are read-only in text editors through a contributed `files.readonlyInclude` default for `**/.prompt-composer/**`; the extension's own saves aren't affected.
 - **A small file watcher on `.prompt-composer/`** only notices files deleted or moved by hand in the Explorer, and updates the panel.
 - **One tab per prompt.** Opening a prompt that's already open focuses its tab, and "Open to the Side" moves that tab to the side group. Two live copies of one prompt would need a sync engine for little gain.
 
