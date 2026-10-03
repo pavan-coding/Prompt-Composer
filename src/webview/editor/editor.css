@@ -1,0 +1,340 @@
+/* Prompt Composer editor (webview). Layout and type from Tiptap's Simple Editor; colours from the
+   VS Code theme (--vscode-* variables, injected by VS Code) or, optionally, Tiptap's own palette. */
+
+#app {
+  --pc-font: "DM Sans", system-ui, sans-serif;
+  --pc-ui-font: "Inter", system-ui, sans-serif;
+  --pc-mono: var(--vscode-editor-font-family, "JetBrains Mono", Consolas, ui-monospace, monospace);
+}
+
+/* ---------- "theme" colours (default): everything from the user's VS Code theme ---------- */
+#app[data-look="theme"] {
+  --pc-bg: var(--vscode-editor-background);
+  --pc-fg: var(--vscode-editor-foreground);
+  --pc-muted: var(--vscode-descriptionForeground);
+  --pc-faint: color-mix(in srgb, var(--vscode-descriptionForeground) 70%, transparent);
+  --pc-border: var(--vscode-panel-border, var(--vscode-widget-border));
+  --pc-hover: var(--vscode-toolbar-hoverBackground);
+  --pc-pressed: var(--vscode-toolbar-activeBackground);
+  --pc-accent: var(--vscode-textLink-foreground);
+  --pc-match: var(--vscode-editorSuggestWidget-highlightForeground, var(--vscode-textLink-foreground));
+  --pc-mention: var(--vscode-textLink-foreground);
+  --pc-mention-bg: color-mix(in srgb, var(--vscode-textLink-foreground) 15%, transparent);
+  --pc-code-fg: var(--vscode-textPreformat-foreground);
+  --pc-code-bg: var(--vscode-textPreformat-background);
+  --pc-code-border: transparent;
+  --pc-pre-fg: var(--vscode-editor-foreground);
+  --pc-pre-bg: var(--vscode-textCodeBlock-background);
+  --pc-pre-border: var(--vscode-widget-border, transparent);
+  --pc-quote-bg: var(--vscode-textBlockQuote-background);
+  --pc-quote-bar: var(--vscode-textBlockQuote-border);
+  /* Floating surfaces: Dark Modern's widget colour (#202020) is almost the editor's (#1F1F1F), so lift it
+     toward the text colour and add the theme's widget border and shadow. */
+  --pc-pop-bg: color-mix(in srgb, var(--vscode-editorWidget-background) 90%, var(--vscode-editor-foreground));
+  --pc-pop-border: var(--vscode-editorWidget-border, var(--vscode-widget-border));
+  --pc-shadow: 0 6px 20px var(--vscode-widget-shadow), 0 1px 3px var(--vscode-widget-shadow);
+  --pc-sel: var(--vscode-list-activeSelectionBackground);
+  --pc-sel-fg: var(--vscode-list-activeSelectionForeground, inherit);
+  --pc-warn: var(--vscode-editorWarning-foreground);
+  --pc-warn-bg: color-mix(in srgb, var(--vscode-editorWarning-foreground) 14%, transparent);
+  --pc-selection: var(--vscode-editor-selectionBackground);
+  --pc-caret: var(--vscode-editorCursor-foreground);
+  --pc-check: var(--vscode-button-background);
+  --pc-check-border: color-mix(in srgb, var(--vscode-descriptionForeground) 80%, var(--vscode-editor-background));
+  --pc-ln: var(--vscode-editorLineNumber-foreground);
+  --pc-ln-active: var(--vscode-editorLineNumber-activeForeground);
+}
+body.vscode-light #app[data-look="theme"],
+body.vscode-high-contrast-light #app[data-look="theme"] { --pc-pop-bg: var(--vscode-editorWidget-background); }
+
+/* ---------- "tiptap" colours: Tiptap Simple Editor's palette ---------- */
+#app[data-look="tiptap"] {
+  --pc-bg: #0e0e11; --pc-fg: #f5f5f5; --pc-muted: rgba(239, 239, 245, .6); --pc-faint: rgba(239, 239, 245, .32);
+  --pc-border: rgba(238, 238, 246, .11); --pc-hover: rgba(231, 231, 243, .07); --pc-pressed: rgba(122, 82, 255, .18);
+  --pc-accent: #7a52ff; --pc-match: #7a52ff; --pc-mention: #a48bff; --pc-mention-bg: rgba(122, 82, 255, .16);
+  --pc-code-bg: rgba(231, 231, 243, .07); --pc-code-border: rgba(238, 238, 246, .11); --pc-code-fg: rgba(251, 251, 254, .78);
+  --pc-pre-bg: rgba(232, 232, 253, .05); --pc-pre-fg: rgba(253, 253, 253, .88); --pc-pre-border: rgba(238, 238, 246, .11);
+  --pc-pop-bg: #18181c; --pc-pop-border: rgba(238, 238, 246, .11); --pc-shadow: 0 12px 33px rgba(0, 0, 0, .5), 0 3.6px 10px rgba(0, 0, 0, .3);
+  --pc-sel: rgba(231, 231, 243, .09); --pc-sel-fg: inherit; --pc-warn: #fb923c; --pc-warn-bg: rgba(251, 146, 60, .12);
+  --pc-selection: rgba(122, 82, 255, .35); --pc-caret: #f5f5f5; --pc-check: #3b82f6; --pc-check-border: #6c6c70;
+  --pc-quote-bg: transparent; --pc-quote-bar: #f5f5f5; --pc-ln: rgba(239, 239, 245, .32); --pc-ln-active: #f5f5f5;
+}
+body.vscode-light #app[data-look="tiptap"],
+body.vscode-high-contrast-light #app[data-look="tiptap"] {
+  --pc-bg: #ffffff; --pc-fg: #222325; --pc-muted: rgba(36, 39, 46, .62); --pc-faint: rgba(40, 44, 51, .42);
+  --pc-border: rgba(15, 22, 36, .08); --pc-hover: rgba(15, 22, 36, .05); --pc-pressed: rgba(98, 41, 255, .08);
+  --pc-accent: #6229ff; --pc-match: #6229ff; --pc-mention: #6a00f5; --pc-mention-bg: rgba(88, 5, 255, .06);
+  --pc-code-bg: rgba(15, 22, 36, .05); --pc-code-border: rgba(15, 22, 36, .08); --pc-code-fg: rgba(34, 35, 37, .8);
+  --pc-pre-bg: rgba(56, 56, 56, .04); --pc-pre-fg: rgba(34, 35, 37, .9); --pc-pre-border: rgba(15, 22, 36, .08);
+  --pc-pop-bg: #ffffff; --pc-pop-border: rgba(61, 37, 20, .08); --pc-shadow: 0 12px 33px rgba(0, 0, 0, .06), 0 3.6px 10px rgba(0, 0, 0, .04);
+  --pc-sel: rgba(61, 37, 20, .08); --pc-warn: #c2410c; --pc-warn-bg: rgba(234, 88, 12, .08);
+  --pc-selection: rgba(98, 41, 255, .16); --pc-caret: #222325; --pc-check: #2563eb; --pc-check-border: #a4a5a8;
+  --pc-quote-bar: #222325; --pc-ln: rgba(40, 44, 51, .42); --pc-ln-active: #222325;
+}
+
+/* syntax colours (lowlight / highlight.js classes), VS Code Dark+ / Light+ palette */
+#app {
+  --hl-ctrl: #c586c0; --hl-kw: #569cd6; --hl-str: #ce9178; --hl-num: #b5cea8; --hl-cmt: #6a9955; --hl-fn: #dcdcaa;
+  --hl-type: #4ec9b0; --hl-var: #9cdcfe; --hl-meta: #c586c0; --hl-tag: #569cd6; --hl-add: #89d185; --hl-del: #f48771;
+}
+body.vscode-light #app, body.vscode-high-contrast-light #app {
+  --hl-ctrl: #af00db; --hl-kw: #0000ff; --hl-str: #a31515; --hl-num: #098658; --hl-cmt: #008000; --hl-fn: #795e26;
+  --hl-type: #267f99; --hl-var: #001080; --hl-meta: #af00db; --hl-tag: #800000; --hl-add: #098658; --hl-del: #a31515;
+}
+
+/* ---------- page ---------- */
+/* VS Code's default webview styles pad the body and set scrollbar-color (which turns off the rounded
+   ::-webkit-scrollbar styling below), so reset both. */
+html { scrollbar-color: auto; }
+html, body { height: 100%; }
+body { margin: 0; padding: 0; overflow: hidden; background: var(--pc-bg); }
+* { box-sizing: border-box; }
+button { font: inherit; color: inherit; }
+#app {
+  height: 100vh; position: relative; display: flex; flex-direction: column;
+  background: var(--pc-bg); color: var(--pc-fg); font-family: var(--pc-ui-font); font-size: 13px;
+}
+#app .ic { width: 16px; height: 16px; }
+
+/* rounded pill scrollbars (page, menus, wide code blocks) */
+#app ::-webkit-scrollbar { width: 12px; height: 12px; }
+#app ::-webkit-scrollbar-thumb {
+  background-color: var(--vscode-scrollbarSlider-background); background-clip: padding-box;
+  border: 3px solid transparent; border-radius: 999px; min-height: 32px;
+}
+#app ::-webkit-scrollbar-thumb:hover { background-color: var(--vscode-scrollbarSlider-hoverBackground); }
+#app ::-webkit-scrollbar-thumb:active { background-color: var(--vscode-scrollbarSlider-activeBackground); }
+#app ::-webkit-scrollbar-track, #app ::-webkit-scrollbar-corner { background: transparent; }
+
+/* ---------- toolbar ---------- */
+.tt-toolbar { flex: none; display: none; background: var(--pc-bg); }
+.show-toolbar .tt-toolbar { display: block; }
+.tt-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px; }
+.tb-full .tt-toolbar { padding: 6px 8px; background: var(--pc-pop-bg); border-bottom: 1px solid var(--pc-pop-border); }
+.tb-mid .tt-toolbar { padding: 10px 16px 8px; }
+.tb-mid .tt-bar {
+  width: fit-content; max-width: 100%; margin: 0 auto; padding: 4px 6px;
+  border: 1px solid var(--pc-pop-border); border-radius: 14px; background: var(--pc-pop-bg); box-shadow: var(--pc-shadow);
+}
+.tt-group { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 2px; }
+.tt-sep { width: 1px; height: 24px; background: var(--pc-pop-border); margin: 0 4px; flex: none; }
+.tt-btn {
+  height: 32px; min-width: 32px; padding: 0 8px; display: inline-flex; align-items: center; justify-content: center; gap: 2px;
+  border: 0; border-radius: 12px; background: transparent; color: var(--pc-muted); cursor: pointer;
+}
+.tt-btn:hover { background: var(--pc-hover); color: var(--pc-fg); }
+.tt-btn.on { background: var(--pc-pressed); color: var(--pc-accent); }
+.tt-btn:disabled { color: var(--pc-faint); background: transparent; cursor: default; }
+.tt-btn .ic.sm { width: 12px; height: 12px; }
+
+/* menus share one look: Tiptap dropdown */
+.tt-pop {
+  background: var(--pc-pop-bg); border: 1px solid var(--pc-pop-border); border-radius: .7rem;
+  box-shadow: var(--pc-shadow); color: var(--pc-fg); font-family: var(--pc-ui-font); font-size: 14px;
+}
+.tt-menu { position: fixed; z-index: 45; min-width: 190px; display: none; flex-direction: column; gap: 1px; padding: .4rem; }
+.tt-menu.show { display: flex; }
+.tt-menu button, .slash button {
+  flex: none; height: 32px; display: flex; align-items: center; gap: 10px; padding: 0 .55rem;
+  border: 0; border-radius: .45rem; background: transparent; text-align: left; cursor: pointer; white-space: nowrap;
+}
+.tt-menu button:hover, .slash button.sel { background: var(--pc-sel); }
+.slash button:not(.sel):hover { background: color-mix(in srgb, var(--pc-sel) 60%, transparent); }
+.tt-menu button.on { color: var(--pc-accent); }
+.tt-menu .lbl, .slash .lbl { flex: 1; }
+.tt-menu kbd, .slash kbd { font-family: var(--pc-mono); font-size: 11px; color: var(--pc-faint); background: none; border: 0; }
+.tt-label { padding: .35rem .55rem .2rem; font-size: 12px; color: var(--pc-faint); }
+
+/* ---------- content ---------- */
+.scroller { flex: 1; overflow: auto; }
+.composer { position: relative; max-width: 648px; margin: 0 auto; padding: 48px 48px 200px; }
+.wide .composer { max-width: none; }
+.ProseMirror {
+  outline: none; font-family: var(--pc-font); font-size: 16px; line-height: 1.6; color: var(--pc-fg); caret-color: var(--pc-fg);
+  -webkit-font-smoothing: antialiased; white-space: pre-wrap; word-wrap: break-word;
+}
+.ProseMirror ::selection { background: var(--pc-selection); }
+:where(.ProseMirror) :where(p, ul, ol, pre, blockquote, h1, h2, h3, h4, h5, h6, hr, img) { margin: 0; }
+/* Block spacing: a new line (Enter) reads like the next line, not a new section. */
+.ProseMirror > * + * { margin-top: 12px; }
+.ProseMirror > p + p { margin-top: 2px; }
+.ProseMirror :is(h1, h2, h3, h4, h5, h6) { line-height: 1.3; }
+.ProseMirror h1 { font-size: 1.5em; font-weight: 700; }
+.ProseMirror h2 { font-size: 1.25em; font-weight: 700; }
+.ProseMirror h3 { font-size: 1.125em; font-weight: 600; }
+.ProseMirror :is(h4, h5, h6) { font-size: 1em; font-weight: 600; }
+.ProseMirror > * + :is(h1, h2) { margin-top: 24px; }
+.ProseMirror > * + :is(h3, h4, h5, h6) { margin-top: 18px; }
+.ProseMirror > :is(h1, h2, h3, h4, h5, h6) + * { margin-top: 6px; }
+.ProseMirror a { color: var(--pc-accent); text-decoration: underline; text-underline-offset: 2px; }
+.ProseMirror code {
+  font-family: var(--pc-mono); font-size: .85em; font-weight: 400; padding: .1em .3em; border-radius: 6px;
+  background: var(--pc-code-bg); border: 1px solid var(--pc-code-border); color: var(--pc-code-fg);
+}
+.ProseMirror pre {
+  position: relative; padding: 34px 16px 16px; border-radius: 6px; overflow-x: auto; white-space: pre;
+  background: var(--pc-pre-bg); border: 1px solid var(--pc-pre-border); line-height: 1.55;
+}
+.ProseMirror pre code { display: block; background: none; border: 0; padding: 0; font-size: 14px; color: var(--pc-pre-fg); }
+.ProseMirror pre.raw-block { padding-top: 16px; border-style: dashed; }
+.ProseMirror pre.raw-block::before {
+  content: "Markdown"; position: absolute; top: 4px; right: 10px; font: 11px var(--pc-ui-font); color: var(--pc-faint);
+}
+.cb-lang {
+  position: absolute; top: 6px; right: 8px; height: 22px; padding: 0 6px 0 8px; display: inline-flex; align-items: center; gap: 2px;
+  border: 0; border-radius: 6px; background: transparent; color: var(--pc-faint); font: 12px var(--pc-ui-font); cursor: pointer;
+}
+.cb-lang:hover { background: var(--pc-hover); color: var(--pc-fg); }
+.cb-lang .ic { width: 12px; height: 12px; }
+.tt-menu.lang-menu { max-height: 300px; overflow-y: auto; min-width: 170px; }
+
+.ProseMirror pre :is(.hljs-keyword, .hljs-literal, .hljs-selector-tag, .hljs-section) { color: var(--hl-kw); }
+.ProseMirror pre .hljs-keyword.hljs-control { color: var(--hl-ctrl); }
+.ProseMirror pre :is(.hljs-string, .hljs-regexp, .hljs-selector-attr, .hljs-template-tag, .hljs-link) { color: var(--hl-str); }
+.ProseMirror pre :is(.hljs-number, .hljs-symbol, .hljs-bullet) { color: var(--hl-num); }
+.ProseMirror pre :is(.hljs-comment, .hljs-quote) { color: var(--hl-cmt); }
+.ProseMirror pre :is(.hljs-title, .hljs-title.function_) { color: var(--hl-fn); }
+.ProseMirror pre :is(.hljs-type, .hljs-built_in, .hljs-title.class_) { color: var(--hl-type); }
+.ProseMirror pre :is(.hljs-attr, .hljs-attribute, .hljs-variable, .hljs-property, .hljs-params, .hljs-template-variable, .hljs-selector-class, .hljs-selector-id) { color: var(--hl-var); }
+.ProseMirror pre :is(.hljs-meta, .hljs-doctag) { color: var(--hl-meta); }
+.ProseMirror pre :is(.hljs-tag, .hljs-name) { color: var(--hl-tag); }
+.ProseMirror pre .hljs-addition { color: var(--hl-add); }
+.ProseMirror pre .hljs-deletion { color: var(--hl-del); }
+.ProseMirror pre .hljs-emphasis { font-style: italic; }
+.ProseMirror pre :is(.hljs-strong, .hljs-section) { font-weight: 600; }
+
+/* drag handle: in the left margin next to the hovered block; no background box, only the dots brighten */
+.drag-handle {
+  position: absolute; z-index: 20; width: 20px; height: 24px; display: none; place-items: center; padding: 0;
+  border: 0; border-radius: 6px; background: transparent; color: var(--pc-faint); cursor: grab;
+}
+.drag-handle.show { display: grid; }
+.drag-handle:hover, .drag-handle.open { color: var(--pc-fg); background: transparent; }
+.drag-handle:active { cursor: grabbing; }
+.ProseMirror-selectednode:is(p, h1, h2, h3, h4, h5, h6, li, blockquote, pre, ul, ol) { outline: 2px solid color-mix(in srgb, var(--pc-accent) 45%, transparent); outline-offset: 2px; border-radius: 4px; }
+.ProseMirror blockquote { position: relative; padding: 6px 12px 6px 16px; background: var(--pc-quote-bg); border-radius: 0 4px 4px 0; }
+.ProseMirror blockquote::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; border-radius: 2px; background: var(--pc-quote-bar); }
+.ProseMirror blockquote > * + * { margin-top: 2px; }
+.ProseMirror ul, .ProseMirror ol { padding-left: 1.5em; }
+.ProseMirror li > p { margin: 0; }
+.ProseMirror li + li { margin-top: .15em; }
+.ProseMirror li > :is(ul, ol) { margin-top: .15em; }
+.ProseMirror ul[data-type="taskList"] { list-style: none; padding-left: .1em; }
+.ProseMirror ul[data-type="taskList"] li { display: flex; gap: 10px; align-items: flex-start; }
+.ProseMirror ul[data-type="taskList"] li > label { flex: none; margin-top: 5px; user-select: none; }
+.ProseMirror ul[data-type="taskList"] li > div { flex: 1; min-width: 0; }
+.ProseMirror ul[data-type="taskList"] li[data-checked="true"] > div { color: var(--pc-faint); text-decoration: line-through; }
+/* Task checkbox: rounded square, see-through when empty, solid blue with a white tick when checked. Sharp at any
+   Windows scaling: 16px is whole device pixels at 100/125/150/200%, the border is exactly 2 device pixels
+   (--px2, from devicePixelRatio) in an opaque colour, and the tick is the box's own full-size background. */
+.ProseMirror input[type="checkbox"] {
+  appearance: none; -webkit-appearance: none; display: block; box-sizing: border-box;
+  width: 16px; height: 16px; margin: 0; cursor: pointer;
+  border: var(--px2, 2px) solid var(--pc-check-border); border-radius: 4px;
+  background: transparent center / 100% 100% no-repeat; background-origin: border-box;
+}
+.ProseMirror input[type="checkbox"]:hover { border-color: var(--pc-check); }
+.ProseMirror input[type="checkbox"]:focus-visible { outline: 2px solid color-mix(in srgb, var(--pc-check) 45%, transparent); outline-offset: 2px; }
+.ProseMirror input[type="checkbox"]:checked {
+  border-color: var(--pc-check); background-color: var(--pc-check);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='4 8.4 6.8 11.2 12 5.2'/%3E%3C/svg%3E");
+}
+.ProseMirror hr { border: 0; border-top: 1px solid var(--pc-border); margin: 36px 0 !important; }
+.ProseMirror img { display: block; max-width: 100%; height: auto; border-radius: 4px; cursor: default; }
+.ProseMirror img.ProseMirror-selectednode { outline: 2px solid var(--pc-accent); outline-offset: 3px; }
+.ProseMirror .ProseMirror-gapcursor:after { border-top-color: var(--pc-caret); }
+
+/* Smooth caret ("editor.cursorSmoothCaretAnimation" + "editor.cursorBlinking: expand"): the browser's caret is
+   hidden and a drawn one glides to each new position, eases its height, stays solid while typing, then blinks
+   by shrinking into its middle and growing back. Not tied to prefers-reduced-motion on purpose: it's an explicit
+   setting, and Windows reports reduced motion whenever its Animation effects option is off. */
+.smooth-caret .ProseMirror { caret-color: transparent; }
+.pc-caret { position: absolute; left: 0; top: 0; z-index: 5; width: var(--px2, 2px); pointer-events: none; opacity: 0; }
+.pc-caret.show { opacity: 1; }
+.pc-caret.glide { transition: transform 100ms cubic-bezier(.25, .8, .25, 1), height 100ms ease-out; }
+.pc-caret-bar { display: block; width: 100%; height: 100%; border-radius: 1px; background: var(--pc-caret); transform-origin: 50% 50%; }
+.pc-caret.show.blink-expand .pc-caret-bar { animation: pc-caret-expand .5s ease-in-out infinite alternate; }
+.pc-caret.show.blink-smooth .pc-caret-bar { animation: pc-caret-fade .5s ease-in-out infinite alternate; }
+.pc-caret.show.blink-phase .pc-caret-bar { animation: pc-caret-fade .5s ease-in-out infinite alternate; }
+.pc-caret.show.blink-blink .pc-caret-bar { animation: pc-caret-blink 1s steps(1) infinite; }
+@keyframes pc-caret-expand { 0%, 20% { transform: scaleY(1); } 80%, 100% { transform: scaleY(0); } }
+@keyframes pc-caret-fade { 0%, 20% { opacity: 1; } 80%, 100% { opacity: 0; } }
+@keyframes pc-caret-blink { 0% { opacity: 1; } 50% { opacity: 0; } }
+
+/* Line numbers: every line you see gets the next number; wrapped paragraphs take one per line. */
+.ln-gutter { position: absolute; left: 0; top: 0; width: 44px; display: none; pointer-events: none; }
+.line-numbers .ln-gutter { display: block; }
+.line-numbers .composer { padding-left: 80px; max-width: 680px; }
+.line-numbers.wide .composer { max-width: none; }
+.ln {
+  position: absolute; right: 0; display: flex; align-items: center;
+  font-family: var(--vscode-editor-font-family, monospace); font-size: 12px; font-variant-numeric: tabular-nums; color: var(--pc-ln);
+}
+.ln.on { color: var(--pc-ln-active); }
+
+/* hint text only in a completely empty document */
+.ProseMirror p.is-editor-empty:first-child::before { content: attr(data-placeholder); float: left; height: 0; pointer-events: none; color: var(--pc-faint); }
+
+/* mentions: name only. Chips are plain inline boxes so they never make a line taller. */
+.mention {
+  display: inline; padding: 1px 5px; border-radius: 5px; font-size: .94em;
+  background: var(--pc-mention-bg); color: var(--pc-mention); white-space: nowrap; cursor: default;
+  -webkit-box-decoration-break: clone; box-decoration-break: clone;
+}
+.mention .ic { width: 13px; height: 13px; vertical-align: -2px; margin-right: 4px; }
+.mention.ProseMirror-selectednode { outline: 2px solid var(--pc-accent); outline-offset: 0; }
+.mention.is-broken { background: var(--pc-warn-bg); color: var(--pc-warn); text-decoration: line-through; }
+.m-at .mention .ic, .m-plain .mention .ic { display: none; }
+.m-at .mention .mention-label::before, .m-plain .mention .mention-label::before { content: "@"; }
+.m-plain .mention { background: none; padding: 0; }
+body.ctrl .mention { cursor: pointer; text-decoration: underline; }
+body.ctrl .ProseMirror a { cursor: pointer; }
+
+/* @ picker: name on top, its real workspace path underneath (what gets saved) */
+.picker { position: fixed; z-index: 40; width: 380px; max-width: calc(100vw - 24px); display: none; flex-direction: column; padding: .4rem; }
+.picker.show { display: flex; }
+.picker .list { max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 1px; }
+.pk-item { display: flex; align-items: center; gap: 10px; padding: 6px .55rem; border-radius: .45rem; cursor: pointer; min-width: 0; }
+.pk-item.sel { background: var(--pc-sel); }
+.pk-item:not(.sel):hover { background: color-mix(in srgb, var(--pc-sel) 60%, transparent); }
+.pk-item > .ic { color: var(--pc-muted); }
+.pk-text { display: flex; flex-direction: column; min-width: 0; }
+.pk-name, .pk-path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pk-name { line-height: 1.3; }
+.pk-path { font-size: 12px; line-height: 1.35; color: var(--pc-faint); }
+.pk-path .ic { width: 12px; height: 12px; vertical-align: -2px; margin: 0 2px; }
+.pk-name b, .pk-path b { font-weight: 600; color: var(--pc-match); }
+.picker .empty { padding: .5rem .55rem; color: var(--pc-faint); }
+:is(.picker, .slash) .hint { margin-top: 4px; padding: 6px .55rem 2px; border-top: 1px solid var(--pc-pop-border); font-size: 12px; color: var(--pc-faint); display: flex; gap: 12px; }
+
+/* hover card */
+.hover { position: fixed; z-index: 50; display: none; max-width: 380px; padding: .55rem .7rem; font-size: 13px; pointer-events: none; }
+.hover.show { display: block; }
+.hover .hc-title { display: flex; align-items: center; gap: 6px; font-weight: 600; }
+.hover .hc-path { margin-top: 3px; font-family: var(--pc-mono); font-size: 12px; color: var(--pc-muted); word-break: break-all; }
+.hover .hc-sub { margin-top: 4px; display: flex; align-items: center; gap: 6px; color: var(--pc-muted); }
+.hover .hc-sub.warn { color: var(--pc-warn); }
+.hover .hc-sub .ic { width: 13px; height: 13px; }
+.hover .hc-foot { margin-top: 6px; font-size: 12px; color: var(--pc-faint); }
+.hover .thumb { display: block; margin-top: 8px; max-width: 240px; max-height: 180px; border-radius: 4px; }
+
+/* bubble menu (selection) */
+.bubble { position: absolute; z-index: 30; display: flex; align-items: center; gap: 2px; padding: 4px; border-radius: 12px; }
+.bubble .tt-btn { height: 30px; min-width: 30px; padding: 0 7px; border-radius: 8px; }
+.bubble .tt-sep { height: 20px; margin: 0 2px; }
+
+/* "/" command menu */
+.slash { position: fixed; z-index: 40; width: 260px; max-width: calc(100vw - 24px); display: none; flex-direction: column; padding: .4rem; }
+.slash.show { display: flex; }
+.slash .list { max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 1px; }
+.slash button > .ic { color: var(--pc-muted); }
+.slash .empty { padding: .5rem .55rem; color: var(--pc-faint); }
+
+/* drop overlay */
+.drop-hint {
+  position: absolute; inset: 8px; z-index: 5; display: none; align-items: flex-start; justify-content: center; pointer-events: none;
+  border: 2px dashed var(--pc-accent); border-radius: 12px; background: color-mix(in srgb, var(--pc-accent) 6%, transparent);
+}
+.drop-hint span { margin-top: 16px; padding: 6px 12px; }
+.drop-hint.show { display: flex; }
+.loading { padding: 40px; color: var(--pc-faint); }
