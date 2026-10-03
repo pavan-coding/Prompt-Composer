@@ -1,0 +1,2566 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prompt Composer UI</title>
+<!-- VS Code chrome icons -->
+<link rel="stylesheet" href="vendor/codicon.css">
+<!-- Editor icons (Lucide, same family of line icons Tiptap's own UI uses) -->
+<link rel="stylesheet" href="vendor/icons.css">
+<!-- Tiptap 3.31.4 bundled into one file (single ProseMirror instance), exposed as window.Tiptap -->
+<script src="vendor/tiptap.js"></script>
+<style>
+@font-face { font-family: "DM Sans"; font-style: normal; font-weight: 100 1000; src: url(vendor/dm-sans-latin-wght-normal.woff2) format("woff2"); }
+@font-face { font-family: "DM Sans"; font-style: italic; font-weight: 100 1000; src: url(vendor/dm-sans-latin-wght-italic.woff2) format("woff2"); }
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 100 900; src: url(vendor/inter-latin-wght-normal.woff2) format("woff2"); }
+
+/* ==================================================================
+ * 1. VS Code theme tokens (the window around the editor).
+ *    Inside a real webview VS Code injects these --vscode-* variables.
+ * ================================================================== */
+:root {
+  --vscode-font-family: "Segoe WPC", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --vscode-font-size: 13px;
+  --vscode-editor-font-family: Consolas, "Cascadia Mono", "Courier New", monospace;
+}
+:root[data-theme="dark"] {
+  --vscode-foreground: #cccccc;
+  --vscode-descriptionForeground: #9d9d9d;
+  --vscode-editor-background: #1f1f1f;
+  --vscode-editor-foreground: #cccccc;
+  --vscode-sideBar-background: #181818;
+  --vscode-activityBar-background: #181818;
+  --vscode-activityBar-foreground: #d7d7d7;
+  --vscode-activityBar-inactiveForeground: #868686;
+  --vscode-activityBar-activeBorder: #0078d4;
+  --vscode-titleBar-activeBackground: #181818;
+  --vscode-editorGroupHeader-tabsBackground: #181818;
+  --vscode-tab-activeBackground: #1f1f1f;
+  --vscode-tab-inactiveBackground: #181818;
+  --vscode-tab-activeBorderTop: #0078d4;
+  --vscode-tab-inactiveForeground: #9d9d9d;
+  --vscode-widget-border: #313131;
+  --vscode-panel-border: #2b2b2b;
+  --vscode-editorWidget-background: #202020;
+  --vscode-editorWidget-border: rgba(204, 204, 204, .2);
+  --vscode-textPreformat-foreground: #d0d0d0;
+  --vscode-textPreformat-background: #3c3c3c;
+  --vscode-textBlockQuote-background: #2b2b2b;
+  --vscode-textBlockQuote-border: #616161;
+  --vscode-statusBar-background: #181818;
+  --vscode-statusBar-foreground: #cccccc;
+  --vscode-focusBorder: #0078d4;
+  --vscode-list-hoverBackground: #2a2d2e;
+  --vscode-list-activeSelectionBackground: #04395e;
+  --vscode-list-inactiveSelectionBackground: #37373d;
+  --vscode-editorSuggestWidget-background: #202020;
+  --vscode-editorSuggestWidget-border: rgba(204, 204, 204, .2);
+  --vscode-editorSuggestWidget-selectedBackground: #04395e;
+  --vscode-editorHoverWidget-background: #202020;
+  --vscode-editorHoverWidget-border: rgba(204, 204, 204, .2);
+  --vscode-textLink-foreground: #4daafc;
+  --vscode-textCodeBlock-background: #2b2b2b;
+  --vscode-editorWarning-foreground: #cca700;
+  --vscode-button-background: #0078d4;
+  --vscode-button-foreground: #ffffff;
+  --vscode-input-background: #313131;
+  --vscode-input-border: #3c3c3c;
+  --vscode-widget-shadow: rgba(0, 0, 0, .36);
+  --vscode-editor-selectionBackground: #264f78;
+  --vscode-editorCursor-foreground: #aeafad;
+  /* values below read from vscode.dev running Dark Modern */
+  --vscode-editorLineNumber-activeForeground: #cccccc;
+  --vscode-tab-activeForeground: #ffffff;
+  --vscode-quickInput-background: #222222;
+  --vscode-menu-border: #454545;
+  --vscode-notifications-background: #1f1f1f;
+  --vscode-notificationToast-border: #313131;
+  --vscode-commandCenter-background: rgba(255, 255, 255, .05);
+  --vscode-commandCenter-border: rgba(204, 204, 204, .2);
+  --vscode-statusBarItem-hoverBackground: rgba(241, 241, 241, .2);
+  --vscode-gitDecoration-ignoredResourceForeground: #8c8c8c;
+  --vscode-editor-findMatchHighlightBackground: rgba(234, 92, 0, .33);
+  --vscode-input-placeholderForeground: #989898;
+  --vscode-menu-background: #1f1f1f;
+  --vscode-menu-selectionBackground: #0078d4;
+  --vscode-menu-separatorBackground: #454545;
+  --vscode-toolbar-hoverBackground: rgba(90, 93, 94, .31);
+  --vscode-toolbar-activeBackground: rgba(99, 102, 103, .31);
+  --vscode-editorLineNumber-foreground: #6e7681;
+  --vscode-scrollbarSlider-background: rgba(121, 121, 121, .4);
+  --vscode-scrollbarSlider-hoverBackground: rgba(100, 100, 100, .7);
+  --vscode-scrollbarSlider-activeBackground: rgba(191, 191, 191, .4);
+  --raw-heading: #569cd6;
+  --raw-mention: #4fc1ff;
+  --raw-image: #ce9178;
+  --raw-marker: #6796e6;
+  --raw-code: #ce9178;
+  --raw-quote: #6a9955;
+  --mock-bar: #2a1f3d;
+  --mock-accent: #b48ead;
+}
+:root[data-theme="light"] {
+  --vscode-foreground: #3b3b3b;
+  --vscode-descriptionForeground: #717171;
+  --vscode-editor-background: #ffffff;
+  --vscode-editor-foreground: #3b3b3b;
+  --vscode-sideBar-background: #f8f8f8;
+  --vscode-activityBar-background: #f8f8f8;
+  --vscode-activityBar-foreground: #1f1f1f;
+  --vscode-activityBar-inactiveForeground: #616161;
+  --vscode-activityBar-activeBorder: #005fb8;
+  --vscode-titleBar-activeBackground: #f8f8f8;
+  --vscode-editorGroupHeader-tabsBackground: #f8f8f8;
+  --vscode-tab-activeBackground: #ffffff;
+  --vscode-tab-inactiveBackground: #f8f8f8;
+  --vscode-tab-activeBorderTop: #005fb8;
+  --vscode-tab-inactiveForeground: #868686;
+  --vscode-widget-border: #e5e5e5;
+  --vscode-panel-border: #e5e5e5;
+  --vscode-editorWidget-background: #f8f8f8;
+  --vscode-editorWidget-border: #c8c8c8;
+  --vscode-textPreformat-foreground: #3b3b3b;
+  --vscode-textPreformat-background: #0000001f;
+  --vscode-textBlockQuote-background: #f8f8f8;
+  --vscode-textBlockQuote-border: #e5e5e5;
+  --vscode-statusBar-background: #f8f8f8;
+  --vscode-statusBar-foreground: #3b3b3b;
+  --vscode-focusBorder: #005fb8;
+  --vscode-list-hoverBackground: #f2f2f2;
+  --vscode-list-activeSelectionBackground: #e8e8e8;
+  --vscode-list-inactiveSelectionBackground: #e4e6f1;
+  --vscode-editorSuggestWidget-background: #f8f8f8;
+  --vscode-editorSuggestWidget-border: #c8c8c8;
+  --vscode-editorSuggestWidget-selectedBackground: #e8e8e8;
+  --vscode-editorHoverWidget-background: #f8f8f8;
+  --vscode-editorHoverWidget-border: #c8c8c8;
+  --vscode-textLink-foreground: #005fb8;
+  --vscode-textCodeBlock-background: #f8f8f8;
+  --vscode-editorWarning-foreground: #bf8803;
+  --vscode-button-background: #005fb8;
+  --vscode-button-foreground: #ffffff;
+  --vscode-input-background: #ffffff;
+  --vscode-input-border: #cecece;
+  --vscode-widget-shadow: rgba(0, 0, 0, .16);
+  --vscode-editor-selectionBackground: #add6ff;
+  --vscode-editorCursor-foreground: #000000;
+  --vscode-editorLineNumber-activeForeground: #171184;
+  --vscode-tab-activeForeground: #3b3b3b;
+  --vscode-quickInput-background: #f8f8f8;
+  --vscode-menu-border: #cecece;
+  --vscode-notifications-background: #ffffff;
+  --vscode-notificationToast-border: #e5e5e5;
+  --vscode-commandCenter-background: rgba(0, 0, 0, .05);
+  --vscode-commandCenter-border: rgba(0, 0, 0, .2);
+  --vscode-statusBarItem-hoverBackground: rgba(31, 31, 31, .07);
+  --vscode-gitDecoration-ignoredResourceForeground: #8e8e90;
+  --vscode-editor-findMatchHighlightBackground: rgba(234, 92, 0, .33);
+  --vscode-input-placeholderForeground: #767676;
+  --vscode-menu-background: #ffffff;
+  --vscode-menu-selectionBackground: #005fb8;
+  --vscode-menu-separatorBackground: #d4d4d4;
+  --vscode-toolbar-hoverBackground: rgba(184, 184, 184, .31);
+  --vscode-toolbar-activeBackground: rgba(166, 166, 166, .31);
+  --vscode-editorLineNumber-foreground: #6e7681;
+  --vscode-scrollbarSlider-background: rgba(100, 100, 100, .4);
+  --vscode-scrollbarSlider-hoverBackground: rgba(100, 100, 100, .7);
+  --vscode-scrollbarSlider-activeBackground: rgba(0, 0, 0, .6);
+  --raw-heading: #800000;
+  --raw-mention: #0070c1;
+  --raw-image: #a31515;
+  --raw-marker: #0451a5;
+  --raw-code: #a31515;
+  --raw-quote: #008000;
+  --mock-bar: #efe6f5;
+  --mock-accent: #7a4b8f;
+}
+
+/* ==================================================================
+ * 2. Editor surface tokens (--pc-*). "Tiptap" look copies the palette
+ *    and type of Tiptap's Simple Editor; "VS Code" look maps to the
+ *    user's VS Code theme instead.
+ * ================================================================== */
+.webview {
+  --pc-font: "DM Sans", system-ui, sans-serif;
+  --pc-ui-font: "Inter", system-ui, sans-serif;
+  --pc-mono: "JetBrains Mono", Consolas, ui-monospace, monospace;
+}
+:root[data-theme="light"] .webview[data-look="tiptap"] {
+  --pc-bg: #ffffff;
+  --pc-fg: #222325;
+  --pc-muted: rgba(36, 39, 46, .62);
+  --pc-faint: rgba(40, 44, 51, .42);
+  --pc-border: rgba(15, 22, 36, .08);
+  --pc-hover: rgba(15, 22, 36, .05);
+  --pc-pressed: rgba(98, 41, 255, .08);
+  --pc-accent: #6229ff;
+  --pc-mention: #6a00f5;
+  --pc-mention-bg: rgba(88, 5, 255, .06);
+  --pc-code-bg: rgba(15, 22, 36, .05);
+  --pc-code-border: rgba(15, 22, 36, .08);
+  --pc-pre-bg: rgba(56, 56, 56, .04);
+  --pc-pop-bg: #ffffff;
+  --pc-pop-border: rgba(61, 37, 20, .08);
+  --pc-shadow: 0 12px 33px rgba(0, 0, 0, .06), 0 3.6px 10px rgba(0, 0, 0, .04);
+  --pc-sel: rgba(61, 37, 20, .08);
+  --pc-warn: #c2410c;
+  --pc-warn-bg: rgba(234, 88, 12, .08);
+  --pc-selection: rgba(98, 41, 255, .16);
+  --pc-caret: var(--pc-fg);
+  --pc-check: #2563eb;
+  --pc-check-border: #a4a5a8;
+  --pc-match: var(--pc-accent);
+  --pc-code-fg: rgba(34, 35, 37, .8);
+  --pc-pre-fg: rgba(34, 35, 37, .9);
+  --pc-pre-border: var(--pc-code-border);
+  --pc-quote-bg: transparent;
+  --pc-quote-bar: var(--pc-fg);
+}
+:root[data-theme="dark"] .webview[data-look="tiptap"] {
+  --pc-bg: #0e0e11;
+  --pc-fg: #f5f5f5;
+  --pc-muted: rgba(239, 239, 245, .6);
+  --pc-faint: rgba(239, 239, 245, .32);
+  --pc-border: rgba(238, 238, 246, .11);
+  --pc-hover: rgba(231, 231, 243, .07);
+  --pc-pressed: rgba(122, 82, 255, .18);
+  --pc-accent: #7a52ff;
+  --pc-mention: #a48bff;
+  --pc-mention-bg: rgba(122, 82, 255, .16);
+  --pc-code-bg: rgba(231, 231, 243, .07);
+  --pc-code-border: rgba(238, 238, 246, .11);
+  --pc-pre-bg: rgba(232, 232, 253, .05);
+  --pc-pop-bg: #18181c;
+  --pc-pop-border: rgba(238, 238, 246, .11);
+  --pc-shadow: 0 12px 33px rgba(0, 0, 0, .5), 0 3.6px 10px rgba(0, 0, 0, .3);
+  --pc-sel: rgba(231, 231, 243, .09);
+  --pc-warn: #fb923c;
+  --pc-warn-bg: rgba(251, 146, 60, .12);
+  --pc-selection: rgba(122, 82, 255, .35);
+  --pc-caret: var(--pc-fg);
+  --pc-check: #3b82f6;
+  --pc-check-border: #6c6c70;
+  --pc-match: var(--pc-accent);
+  --pc-code-fg: rgba(251, 251, 254, .78);
+  --pc-pre-fg: rgba(253, 253, 253, .88);
+  --pc-pre-border: var(--pc-code-border);
+  --pc-quote-bg: transparent;
+  --pc-quote-bar: var(--pc-fg);
+}
+/* "VS Code" look (default): every colour comes from the user's theme, here Dark/Light Modern.
+   Tiptap's fonts and spacing are kept; only colours change. */
+.webview[data-look="vscode"] {
+  --pc-bg: var(--vscode-editor-background);
+  --pc-fg: var(--vscode-editor-foreground);
+  --pc-muted: var(--vscode-descriptionForeground);
+  --pc-faint: color-mix(in srgb, var(--vscode-descriptionForeground) 70%, transparent);
+  --pc-border: var(--vscode-panel-border);
+  --pc-hover: var(--vscode-toolbar-hoverBackground);
+  --pc-pressed: var(--vscode-toolbar-activeBackground);
+  --pc-accent: var(--vscode-textLink-foreground);
+  --pc-match: var(--vscode-editorSuggestWidget-highlightForeground);
+  --pc-mention: var(--vscode-textLink-foreground);
+  --pc-mention-bg: color-mix(in srgb, var(--vscode-textLink-foreground) 15%, transparent);
+  --pc-code-fg: var(--vscode-textPreformat-foreground);   /* inline code, like VS Code's Markdown preview */
+  --pc-code-bg: var(--vscode-textPreformat-background);
+  --pc-code-border: transparent;
+  --pc-pre-fg: var(--vscode-editor-foreground);
+  --pc-pre-bg: var(--vscode-textCodeBlock-background);    /* #2B2B2B in Dark Modern */
+  --pc-pre-border: var(--vscode-widget-border);
+  --pc-quote-bg: var(--vscode-textBlockQuote-background);
+  --pc-quote-bar: var(--vscode-textBlockQuote-border);
+  /* Floating surfaces (toolbar, menus, picker, hover). Dark Modern's widget colour (#202020) is almost
+     the editor's (#1F1F1F), so lift it a little toward the text colour and add the theme's widget
+     border and shadow, so they stand apart without introducing new colours. */
+  --pc-pop-bg: color-mix(in srgb, var(--vscode-editorWidget-background) 90%, var(--vscode-editor-foreground));
+  --pc-pop-border: var(--vscode-editorWidget-border);
+  --pc-shadow: 0 6px 20px var(--vscode-widget-shadow), 0 1px 3px var(--vscode-widget-shadow);
+  --pc-sel: var(--vscode-list-activeSelectionBackground);
+  --pc-warn: var(--vscode-editorWarning-foreground);
+  --pc-warn-bg: color-mix(in srgb, var(--vscode-editorWarning-foreground) 14%, transparent);
+  --pc-selection: var(--vscode-editor-selectionBackground);
+  --pc-caret: var(--vscode-editorCursor-foreground);
+  --pc-check: var(--vscode-button-background);
+  --pc-check-border: color-mix(in srgb, var(--vscode-descriptionForeground) 80%, var(--vscode-editor-background));
+}
+/* light themes: keep widgets light (#F8F8F8) and let border + shadow do the separating */
+:root[data-theme="light"] .webview[data-look="vscode"] { --pc-pop-bg: var(--vscode-editorWidget-background); }
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  overflow: hidden;
+  background: var(--vscode-editor-background);
+  color: var(--vscode-foreground);
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+}
+button { font: inherit; color: inherit; }
+.codicon { font-size: 16px; }
+/* VS Code's own panels (Explorer, text editor): square scrollbars, as VS Code draws them */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--vscode-scrollbarSlider-background); }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* Inside the composer webview (page, menus, wide code blocks): rounded pill scrollbars.
+   A transparent border insets the thumb so it floats as a capsule; colours are the theme's slider colours. */
+.webview ::-webkit-scrollbar { width: 12px; height: 12px; }
+.webview ::-webkit-scrollbar-thumb {
+  background-color: var(--vscode-scrollbarSlider-background); background-clip: padding-box;
+  border: 3px solid transparent; border-radius: 999px; min-height: 32px;
+}
+.webview ::-webkit-scrollbar-thumb:hover { background-color: var(--vscode-scrollbarSlider-hoverBackground); }
+.webview ::-webkit-scrollbar-thumb:active { background-color: var(--vscode-scrollbarSlider-activeBackground); }
+.webview ::-webkit-scrollbar-track, .webview ::-webkit-scrollbar-corner { background: transparent; }
+
+/* ---------- page grid ---------- */
+.app {
+  display: grid;
+  grid-template-rows: auto 30px minmax(0, 1fr) 22px;
+  grid-template-columns: minmax(0, 1fr);
+  height: 100vh;
+}
+
+/* ---------- mockup-only control bar ---------- */
+.mockbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  padding: 6px 12px;
+  background: var(--mock-bar);
+  border-bottom: 1px dashed var(--mock-accent);
+  font-size: 12px;
+}
+.mockbar .tag { font-weight: 600; color: var(--mock-accent); letter-spacing: .04em; text-transform: uppercase; font-size: 11px; }
+.mockbar .ctl { display: inline-flex; align-items: center; gap: 6px; }
+.mockbar .ctl > span { color: var(--vscode-descriptionForeground); }
+.seg { display: inline-flex; border: 1px solid var(--vscode-input-border); border-radius: 4px; overflow: hidden; }
+.seg button { border: 0; background: transparent; padding: 2px 8px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--vscode-input-border); }
+.seg button[aria-pressed="true"] { background: var(--vscode-button-background); color: var(--vscode-button-foreground); }
+.mockbar .linkbtn { border: 0; background: none; color: var(--vscode-textLink-foreground); cursor: pointer; padding: 0; }
+
+/* ---------- VS Code title bar ---------- */
+.titlebar {
+  display: grid;
+  grid-template-columns: 1fr minmax(200px, 520px) 1fr;
+  align-items: center;
+  background: var(--vscode-titleBar-activeBackground);
+  border-bottom: 1px solid var(--vscode-panel-border);
+  padding-left: 8px;
+}
+.titlebar .menus { display: flex; gap: 2px; overflow: hidden; white-space: nowrap; }
+.titlebar .menus span { padding: 2px 7px; }
+.titlebar .cc {
+  display: flex; align-items: center; justify-content: center; gap: 6px; height: 22px;
+  border: 1px solid var(--vscode-commandCenter-border); border-radius: 6px;
+  background: var(--vscode-commandCenter-background); color: var(--vscode-descriptionForeground); font-size: 12px;
+}
+.titlebar .wincontrols { display: flex; justify-content: flex-end; height: 100%; }
+.titlebar .wincontrols i { width: 40px; display: grid; place-items: center; height: 100%; }
+.titlebar .wincontrols .layout { width: 28px; }
+
+/* ---------- VS Code workbench ---------- */
+.workbench { display: flex; min-height: 0; }
+.activitybar {
+  width: 48px; flex: none; display: flex; flex-direction: column; align-items: center;
+  background: var(--vscode-activityBar-background); border-right: 1px solid var(--vscode-panel-border);
+}
+.activitybar i {
+  width: 48px; height: 48px; display: grid; place-items: center; font-size: 24px;
+  color: var(--vscode-activityBar-inactiveForeground); border-left: 2px solid transparent;
+}
+.activitybar i.active { color: var(--vscode-activityBar-foreground); border-left-color: var(--vscode-activityBar-activeBorder); }
+.activitybar .spacer { flex: 1; }
+
+.sidebar {
+  width: 250px; flex: none; display: flex; flex-direction: column; min-height: 0;
+  background: var(--vscode-sideBar-background); border-right: 1px solid var(--vscode-panel-border);
+}
+.sidebar.hidden { display: none; }
+.sidebar .title { height: 35px; display: flex; align-items: center; justify-content: space-between; padding: 0 8px 0 20px; font-size: 11px; letter-spacing: .04em; }
+.sidebar .section { height: 22px; display: flex; align-items: center; gap: 2px; padding-left: 2px; font-size: 11px; font-weight: 700; letter-spacing: .04em; }
+.tree { flex: 1; overflow: auto; padding-bottom: 12px; }
+.row { height: 22px; display: flex; align-items: center; gap: 4px; padding-right: 8px; cursor: pointer; white-space: nowrap; user-select: none; }
+.row:hover { background: var(--vscode-list-hoverBackground); }
+.row.active { background: var(--vscode-list-inactiveSelectionBackground); }
+.row.flash { outline: 1px solid var(--vscode-focusBorder); outline-offset: -1px; background: var(--vscode-list-activeSelectionBackground); }
+.row .twistie { width: 16px; flex: none; }
+.row .name { overflow: hidden; text-overflow: ellipsis; }
+.row .deco { margin-left: auto; color: var(--vscode-descriptionForeground); font-size: 12px; }
+.row i.icon { flex: none; }
+.row.is-link i.icon { color: var(--vscode-textLink-foreground); }
+.row.ignored .name, .row.ignored i.icon { color: var(--vscode-gitDecoration-ignoredResourceForeground); }
+.activitybar i { cursor: pointer; }
+
+/* ---------- side bar views: Explorer and the Prompt Composer panel ---------- */
+.sidebar .view { display: none; flex-direction: column; min-height: 0; flex: 1; }
+.sidebar .view.show { display: flex; }
+.sidebar .title .title-actions { display: flex; gap: 2px; }
+.lib-search {
+  margin: 2px 12px 6px 20px; height: 26px; display: flex; align-items: center; gap: 4px; padding: 0 2px 0 6px;
+  background: var(--vscode-input-background); border: 1px solid var(--vscode-input-border); border-radius: 2px;
+}
+.lib-search:focus-within { border-color: var(--vscode-focusBorder); }
+.lib-search > .codicon { font-size: 14px; color: var(--vscode-descriptionForeground); }
+.lib-search input { flex: 1; min-width: 0; border: 0; outline: none; background: transparent; color: var(--vscode-foreground); font: inherit; }
+.lib-search input::placeholder { color: var(--vscode-input-placeholderForeground); }
+.lib-search .iconbtn { width: 20px; height: 20px; visibility: hidden; }
+.lib-search.has-text .iconbtn { visibility: visible; }
+.lib-count { padding: 0 12px 4px 20px; font-size: 12px; color: var(--vscode-descriptionForeground); min-height: 0; }
+.lib-count:empty { display: none; }
+.lib-tree { flex: 1; overflow: auto; padding-bottom: 8px; display: flex; flex-direction: column; }
+.lrow { height: 22px; display: flex; align-items: center; gap: 4px; padding-right: 10px; cursor: pointer; white-space: nowrap; user-select: none; flex: none; }
+.lrow:hover { background: var(--vscode-list-hoverBackground); }
+.lrow.active { background: var(--vscode-list-inactiveSelectionBackground); }
+.lib-tree:focus-within .lrow.active { background: var(--vscode-list-activeSelectionBackground); outline: 1px solid var(--vscode-focusBorder); outline-offset: -1px; }
+.lrow .twistie { width: 16px; flex: none; }
+.lrow .name { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.lrow .desc { margin-left: auto; padding-left: 8px; color: var(--vscode-descriptionForeground); font-size: 12px; flex: none; }
+.lrow .badge { margin-left: auto; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; display: grid; place-items: center; font-size: 11px; background: var(--vscode-badge-background); color: var(--vscode-badge-foreground); flex: none; }
+.lrow.grp { font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.lrow.day .name { color: var(--vscode-foreground); }
+.lrow i.icon { flex: none; font-size: 16px; }
+.lrow.prompt .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex: none; margin-left: 6px; display: none; }
+.lrow.prompt.dirty .dot { display: block; }
+.lrow.snip { height: 20px; font-size: 12px; color: var(--vscode-descriptionForeground); cursor: pointer; }
+.lrow.snip mark { background: var(--vscode-editor-findMatchHighlightBackground); color: var(--vscode-foreground); border-radius: 2px; }
+.lrow .name mark { background: none; color: var(--vscode-list-highlightForeground, #2aaaff); font-weight: 600; }
+.lib-empty-hint { flex: 1; min-height: 48px; display: flex; align-items: flex-end; justify-content: center; padding: 12px 20px; font-size: 12px; color: var(--vscode-descriptionForeground); opacity: .75; text-align: center; }
+.lib-welcome { padding: 12px 20px; color: var(--vscode-descriptionForeground); line-height: 1.5; }
+.lib-welcome button { margin-top: 10px; width: 100%; height: 26px; border: 0; border-radius: 2px; background: var(--vscode-button-background); color: var(--vscode-button-foreground); cursor: pointer; }
+
+/* VS Code native context menu (the extension gets the real one via "webview/context" + data-vscode-context) */
+.vsc-menu {
+  position: fixed; z-index: 80; display: none; min-width: 230px; padding: 4px 0;
+  background: var(--vscode-menu-background); border: 1px solid var(--vscode-menu-border); border-radius: 5px;
+  box-shadow: 0 2px 8px var(--vscode-widget-shadow); color: var(--vscode-foreground);
+}
+.vsc-menu.show { display: block; }
+.vsc-menu button { width: calc(100% - 8px); margin: 0 4px; height: 24px; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 0 20px 0 24px; border: 0; border-radius: 3px; background: none; text-align: left; cursor: pointer; }
+.vsc-menu button:hover { background: var(--vscode-menu-selectionBackground); color: #fff; }
+.vsc-menu button kbd { border: 0; background: none; font-size: 12px; color: inherit; opacity: .8; }
+.vsc-menu .sep { height: 1px; margin: 4px 0; background: var(--vscode-menu-separatorBackground); }
+.vsc-menu button { position: relative; }
+.vsc-menu .chk { position: absolute; left: 6px; font-size: 14px; visibility: hidden; }
+.vsc-menu button[aria-checked="true"] .chk { visibility: visible; }
+
+.groups { flex: 1; display: flex; min-width: 0; }
+.group { flex: 1 1 0; display: flex; flex-direction: column; min-width: 0; }
+.group.raw { flex: 0 0 36%; min-width: 260px; border-left: 1px solid var(--vscode-panel-border); }
+.group.raw.hidden { display: none; }
+.tabs { height: 35px; flex: none; display: flex; background: var(--vscode-editorGroupHeader-tabsBackground); border-bottom: 1px solid var(--vscode-panel-border); }
+.tab {
+  display: flex; align-items: center; gap: 6px; padding: 0 8px 0 12px; min-width: 0; white-space: nowrap;
+  border-right: 1px solid var(--vscode-panel-border); background: var(--vscode-tab-inactiveBackground); color: var(--vscode-tab-inactiveForeground);
+}
+.tab.active { background: var(--vscode-tab-activeBackground); color: var(--vscode-tab-activeForeground); box-shadow: inset 0 1px 0 var(--vscode-tab-activeBorderTop); margin-bottom: -1px; }
+.tab .desc { color: var(--vscode-descriptionForeground); font-size: 12px; }
+.tab .close { width: 20px; height: 20px; display: grid; place-items: center; border-radius: 4px; }
+.tab .close .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; display: none; }
+.tab.dirty .close .dot { display: block; }
+.tab.dirty .close i { display: none; }
+.tab-actions { margin-left: auto; display: flex; align-items: center; gap: 2px; padding: 0 8px; }
+.iconbtn { width: 24px; height: 22px; display: grid; place-items: center; border: 0; background: transparent; border-radius: 5px; cursor: pointer; }
+.iconbtn:hover { background: var(--vscode-toolbar-hoverBackground); }
+.iconbtn.on { background: var(--vscode-toolbar-activeBackground); }
+
+/* ==================================================================
+ * 3. The webview: everything below is what the extension renders.
+ * ================================================================== */
+.webview {
+  flex: 1; min-height: 0; position: relative; display: flex; flex-direction: column;
+  background: var(--pc-bg); color: var(--pc-fg); font-family: var(--pc-ui-font);
+}
+.webview .ic { width: 16px; height: 16px; }
+
+/* toolbar: Tiptap Simple Editor buttons. Stays at the top; when the editor gets
+   narrow the buttons wrap onto a second line instead of scrolling sideways.
+   "mid" = a centered bar about as wide as its buttons; "full" = edge-to-edge strip. */
+.tt-toolbar { flex: none; display: none; background: var(--pc-bg); }
+.show-toolbar .tt-toolbar { display: block; }
+.tt-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 4px; }
+.tb-full .tt-toolbar { padding: 6px 8px; background: var(--pc-pop-bg); border-bottom: 1px solid var(--pc-pop-border); }
+.tb-mid .tt-toolbar { padding: 10px 16px 8px; }
+.tb-mid .tt-bar {
+  width: fit-content; max-width: 100%; margin: 0 auto; padding: 4px 6px;
+  border: 1px solid var(--pc-pop-border); border-radius: 14px; background: var(--pc-pop-bg); box-shadow: var(--pc-shadow);
+}
+.tt-group { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 2px; }
+.tt-sep { width: 1px; height: 24px; background: var(--pc-pop-border); margin: 0 4px; flex: none; }
+.tt-btn {
+  height: 32px; min-width: 32px; padding: 0 8px; display: inline-flex; align-items: center; justify-content: center; gap: 2px;
+  border: 0; border-radius: 12px; background: transparent; color: var(--pc-muted); cursor: pointer;
+}
+.tt-btn:hover { background: var(--pc-hover); color: var(--pc-fg); }
+.tt-btn.on { background: var(--pc-pressed); color: var(--pc-accent); }
+.tt-btn:disabled { color: var(--pc-faint); background: transparent; cursor: default; }
+.tt-btn .ic.sm { width: 12px; height: 12px; }
+.tt-dd { position: relative; }
+
+/* menus share one look: Tiptap dropdown */
+.tt-pop {
+  background: var(--pc-pop-bg); border: 1px solid var(--pc-pop-border); border-radius: .7rem;
+  box-shadow: var(--pc-shadow); color: var(--pc-fg); font-family: var(--pc-ui-font); font-size: 14px;
+}
+.tt-menu {
+  position: fixed; z-index: 45; min-width: 190px; display: none; flex-direction: column; gap: 1px; padding: .4rem;
+}
+.tt-menu.show { display: flex; }
+.tt-menu button, .slash button {
+  flex: none; height: 32px; display: flex; align-items: center; gap: 10px; padding: 0 .55rem;
+  border: 0; border-radius: .45rem; background: transparent; text-align: left; cursor: pointer; white-space: nowrap;
+}
+.tt-menu button:hover, .slash button.sel { background: var(--pc-sel); }
+.slash button:not(.sel):hover { background: color-mix(in srgb, var(--pc-sel) 60%, transparent); }
+.tt-menu button.on { color: var(--pc-accent); }
+.tt-menu .lbl, .slash .lbl { flex: 1; }
+.tt-menu kbd, .slash kbd { font-family: var(--pc-mono); font-size: 11px; color: var(--pc-faint); background: none; border: 0; }
+.tt-label { padding: .35rem .55rem .2rem; font-size: 12px; color: var(--pc-faint); }
+
+/* content */
+.scroller { flex: 1; overflow: auto; }
+.composer { position: relative; max-width: 648px; margin: 0 auto; padding: 48px 48px 200px; }
+.wide .composer { max-width: none; }
+.ProseMirror {
+  outline: none; font-family: var(--pc-font); font-size: 16px; line-height: 1.6; color: var(--pc-fg); caret-color: var(--pc-fg);
+  -webkit-font-smoothing: antialiased;
+}
+.ProseMirror ::selection { background: var(--pc-selection); }
+:where(.ProseMirror) :where(p, ul, ol, pre, blockquote, h1, h2, h3, hr, img) { margin: 0; }
+/* Block spacing. Enter starts a new paragraph, and a new line should read like the next line, not a new
+   section: paragraphs sit 2px apart. Want more space? Press Enter again; empty lines are kept in the file. */
+.ProseMirror > * + * { margin-top: 12px; }
+.ProseMirror > p + p { margin-top: 2px; }
+/* Headings: compact line box, a clear gap above, and sitting close to the content they introduce */
+.ProseMirror h1 { font-size: 1.5em; line-height: 1.3; font-weight: 700; }
+.ProseMirror h2 { font-size: 1.25em; line-height: 1.3; font-weight: 700; }
+.ProseMirror h3 { font-size: 1.125em; line-height: 1.3; font-weight: 600; }
+.ProseMirror > * + :is(h1, h2) { margin-top: 24px; }
+.ProseMirror > * + h3 { margin-top: 18px; }
+.ProseMirror > :is(h1, h2, h3) + * { margin-top: 6px; }
+.ProseMirror a { color: var(--pc-accent); text-decoration: underline; text-underline-offset: 2px; }
+.ProseMirror code {
+  font-family: var(--pc-mono); font-size: .85em; font-weight: 400; padding: .1em .3em; border-radius: 6px;
+  background: var(--pc-code-bg); border: 1px solid var(--pc-code-border); color: var(--pc-code-fg);
+}
+.ProseMirror pre {
+  position: relative; padding: 16px; border-radius: 6px; overflow-x: auto;
+  background: var(--pc-pre-bg); border: 1px solid var(--pc-pre-border); line-height: 1.55;
+}
+.ProseMirror pre code { display: block; background: none; border: 0; padding: 0; font-size: 14px; color: var(--pc-pre-fg); }
+.ProseMirror pre { padding-top: 34px; }
+.cb-lang {
+  position: absolute; top: 6px; right: 8px; height: 22px; padding: 0 6px 0 8px; display: inline-flex; align-items: center; gap: 2px;
+  border: 0; border-radius: 6px; background: transparent; color: var(--pc-faint); font: 12px var(--pc-ui-font); cursor: pointer;
+}
+.cb-lang:hover { background: var(--pc-hover); color: var(--pc-fg); }
+.cb-lang .ic { width: 12px; height: 12px; }
+.tt-menu.lang-menu { max-height: 300px; overflow-y: auto; min-width: 170px; }
+
+/* syntax colours (lowlight / highlight.js classes), VS Code Dark+ / Light+ palette */
+:root[data-theme="dark"] .webview {
+  --hl-ctrl: #c586c0;
+  --hl-kw: #569cd6; --hl-str: #ce9178; --hl-num: #b5cea8; --hl-cmt: #6a9955; --hl-fn: #dcdcaa;
+  --hl-type: #4ec9b0; --hl-var: #9cdcfe; --hl-meta: #c586c0; --hl-tag: #569cd6; --hl-add: #89d185; --hl-del: #f48771;
+}
+:root[data-theme="light"] .webview {
+  --hl-ctrl: #af00db;
+  --hl-kw: #0000ff; --hl-str: #a31515; --hl-num: #098658; --hl-cmt: #008000; --hl-fn: #795e26;
+  --hl-type: #267f99; --hl-var: #001080; --hl-meta: #af00db; --hl-tag: #800000; --hl-add: #098658; --hl-del: #a31515;
+}
+.ProseMirror pre :is(.hljs-keyword, .hljs-literal, .hljs-selector-tag, .hljs-section) { color: var(--hl-kw); }
+.ProseMirror pre .hljs-keyword.hljs-control { color: var(--hl-ctrl); }
+.ProseMirror pre :is(.hljs-string, .hljs-regexp, .hljs-selector-attr, .hljs-template-tag, .hljs-link) { color: var(--hl-str); }
+.ProseMirror pre :is(.hljs-number, .hljs-symbol, .hljs-bullet) { color: var(--hl-num); }
+.ProseMirror pre :is(.hljs-comment, .hljs-quote) { color: var(--hl-cmt); }
+.ProseMirror pre :is(.hljs-title, .hljs-title.function_) { color: var(--hl-fn); }
+.ProseMirror pre :is(.hljs-type, .hljs-built_in, .hljs-title.class_) { color: var(--hl-type); }
+.ProseMirror pre :is(.hljs-attr, .hljs-attribute, .hljs-variable, .hljs-property, .hljs-params, .hljs-template-variable, .hljs-selector-class, .hljs-selector-id) { color: var(--hl-var); }
+.ProseMirror pre :is(.hljs-meta, .hljs-doctag) { color: var(--hl-meta); }
+.ProseMirror pre :is(.hljs-tag, .hljs-name) { color: var(--hl-tag); }
+.ProseMirror pre .hljs-addition { color: var(--hl-add); }
+.ProseMirror pre .hljs-deletion { color: var(--hl-del); }
+.ProseMirror pre .hljs-emphasis { font-style: italic; }
+.ProseMirror pre :is(.hljs-strong, .hljs-section) { font-weight: 600; }
+
+/* drag handle: shows in the left margin next to the block under the mouse */
+.drag-handle {
+  position: absolute; z-index: 20; width: 20px; height: 24px; display: none; place-items: center;
+  border: 0; border-radius: 6px; background: transparent; color: var(--pc-faint); cursor: grab;
+}
+.drag-handle.show { display: grid; }
+.drag-handle:hover, .drag-handle.open { color: var(--pc-fg); }
+.drag-handle:active { cursor: grabbing; }
+.ProseMirror-selectednode:is(p, h1, h2, h3, li, blockquote, pre, ul, ol) { outline: 2px solid color-mix(in srgb, var(--pc-accent) 45%, transparent); outline-offset: 2px; border-radius: 4px; }
+.ProseMirror blockquote { position: relative; padding: 6px 12px 6px 16px; background: var(--pc-quote-bg); border-radius: 0 4px 4px 0; }
+.ProseMirror blockquote::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; border-radius: 2px; background: var(--pc-quote-bar); }
+.ProseMirror ul, .ProseMirror ol { padding-left: 1.5em; }
+.ProseMirror li > p { margin: 0; }
+.ProseMirror li + li { margin-top: .15em; }
+.ProseMirror ul[data-type="taskList"] { list-style: none; padding-left: .1em; }
+.ProseMirror ul[data-type="taskList"] li { display: flex; gap: 10px; align-items: flex-start; }
+.ProseMirror ul[data-type="taskList"] li > label { flex: none; margin-top: 5px; user-select: none; }
+.ProseMirror ul[data-type="taskList"] li > div { flex: 1; }
+.ProseMirror ul[data-type="taskList"] li[data-checked="true"] > div { color: var(--pc-faint); text-decoration: line-through; }
+/* task checkbox: rounded square, see-through when empty, solid blue with a white tick when checked.
+   Kept sharp at any Windows scaling: 16px is a whole number of device pixels at 100/125/150/200%,
+   the border is exactly 2 device pixels (--px2, set from devicePixelRatio), its colour is opaque,
+   and the tick is the box's own full-size background so it is never offset by a fraction of a pixel. */
+.ProseMirror input[type="checkbox"] {
+  appearance: none; -webkit-appearance: none; display: block; box-sizing: border-box;
+  width: 16px; height: 16px; margin: 0; cursor: pointer;
+  border: var(--px2, 2px) solid var(--pc-check-border); border-radius: 4px;
+  background: transparent center / 100% 100% no-repeat; background-origin: border-box;
+}
+.ProseMirror input[type="checkbox"]:hover { border-color: var(--pc-check); }
+.ProseMirror input[type="checkbox"]:focus-visible { outline: 2px solid color-mix(in srgb, var(--pc-check) 45%, transparent); outline-offset: 2px; }
+.ProseMirror input[type="checkbox"]:checked {
+  border-color: var(--pc-check); background-color: var(--pc-check);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='4 8.4 6.8 11.2 12 5.2'/%3E%3C/svg%3E");
+}
+.ProseMirror hr { border: 0; border-top: 1px solid var(--pc-border); margin: 36px 0 !important; }
+.ProseMirror img { display: block; max-width: 100%; height: auto; border-radius: 4px; cursor: default; }
+.ProseMirror img.ProseMirror-selectednode { outline: 2px solid var(--pc-accent); outline-offset: 3px; }
+/* Smooth caret, like VS Code's "editor.cursorSmoothCaretAnimation" + "editor.cursorBlinking: expand":
+   the browser's caret is hidden and a drawn one glides to each new position, eases its height between
+   line sizes, stays solid while you type, then shrinks to its middle and grows back instead of hard blinking. */
+.smooth-caret .ProseMirror { caret-color: transparent; }
+/* outer box = position + height (glides); inner bar = the visible line (blinks) */
+.pc-caret { position: absolute; left: 0; top: 0; z-index: 5; width: var(--px2, 2px); pointer-events: none; opacity: 0; }
+.pc-caret.show { opacity: 1; }
+.pc-caret.glide { transition: transform 100ms cubic-bezier(.25, .8, .25, 1), height 100ms ease-out; }
+.pc-caret-bar { display: block; width: 100%; height: 100%; border-radius: 1px; background: var(--pc-caret); transform-origin: 50% 50%; }
+/* VS Code's "expand" blinking: the line shrinks from top and bottom into its middle, then grows back out */
+.pc-caret.show.blink .pc-caret-bar { animation: pc-caret-expand .5s ease-in-out infinite alternate; }
+@keyframes pc-caret-expand { 0%, 20% { transform: scaleY(1); } 80%, 100% { transform: scaleY(0); } }
+/* Not tied to prefers-reduced-motion on purpose: the smooth caret is an explicit user choice
+   (the extension setting, "Caret: Native" here), and Windows reports reduced motion whenever
+   its Animation effects option is off, which would silently disable it. */
+
+/* Line numbers: each visible line shows its line number in the saved .md file, the same numbers
+   "Open as text" shows. Wrapped lines get no number, like VS Code. The gutter widens the column. */
+.webview { --pc-ln: var(--pc-faint); --pc-ln-active: var(--pc-fg); }
+.webview[data-look="vscode"] { --pc-ln: var(--vscode-editorLineNumber-foreground); --pc-ln-active: var(--vscode-editorLineNumber-activeForeground); }
+.ln-gutter { position: absolute; left: 0; top: 0; width: 44px; display: none; pointer-events: none; }
+.line-numbers .ln-gutter { display: block; }
+.line-numbers .composer { padding-left: 80px; max-width: 680px; }
+.line-numbers.wide .composer { max-width: none; }
+.ln {
+  position: absolute; right: 0; display: flex; align-items: center;
+  font-family: var(--vscode-editor-font-family); font-size: 12px; font-variant-numeric: tabular-nums; color: var(--pc-ln);
+}
+.ln.on { color: var(--pc-ln-active); }
+
+/* hint text only in a completely empty document, not on every empty line */
+.ProseMirror p.is-editor-empty:first-child::before { content: attr(data-placeholder); float: left; height: 0; pointer-events: none; color: var(--pc-faint); }
+
+/* mentions: name only. Default = Tiptap's classic "@name" pill */
+/* Chips are plain inline boxes so they never make a line taller: the pill (text + 1px padding)
+   is shorter than the 1.6 line height, leaving a visible gap to chips on the lines above and below. */
+.mention {
+  display: inline; padding: 1px 5px; border-radius: 5px; font-size: .94em;
+  background: var(--pc-mention-bg); color: var(--pc-mention); white-space: nowrap; cursor: default;
+  -webkit-box-decoration-break: clone; box-decoration-break: clone;
+}
+.mention .ic { width: 13px; height: 13px; vertical-align: -2px; margin-right: 4px; }
+.mention.ProseMirror-selectednode { outline: 2px solid var(--pc-accent); outline-offset: 0; }
+.mention.is-broken { background: var(--pc-warn-bg); color: var(--pc-warn); text-decoration: line-through; }
+.m-at .mention .ic, .m-plain .mention .ic { display: none; }
+.m-at .mention .mention-label::before, .m-plain .mention .mention-label::before { content: "@"; }
+.m-plain .mention { background: none; padding: 0; }
+body.ctrl .mention { cursor: pointer; text-decoration: underline; }
+body.ctrl .ProseMirror a { cursor: pointer; }
+
+/* @ picker */
+/* Each suggestion: name on top, its real workspace path underneath (what gets saved). */
+.picker { position: fixed; z-index: 40; width: 380px; max-width: calc(100vw - 24px); display: none; flex-direction: column; padding: .4rem; }
+.picker.show { display: flex; }
+.picker .list { max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 1px; }
+.pk-item { display: flex; align-items: center; gap: 10px; padding: 6px .55rem; border-radius: .45rem; cursor: pointer; min-width: 0; }
+.pk-item.sel { background: var(--pc-sel); }
+.pk-item:not(.sel):hover { background: color-mix(in srgb, var(--pc-sel) 60%, transparent); }
+.pk-item > .ic { color: var(--pc-muted); }
+.pk-text { display: flex; flex-direction: column; min-width: 0; }
+.pk-name, .pk-path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pk-name { line-height: 1.3; }
+.pk-path { font-size: 12px; line-height: 1.35; color: var(--pc-faint); }
+.pk-path .ic { width: 12px; height: 12px; vertical-align: -2px; margin: 0 2px; }
+.pk-name b, .pk-path b { font-weight: 600; color: var(--pc-match); }
+.picker .empty { padding: .5rem .55rem; color: var(--pc-faint); }
+:is(.picker, .slash) .hint { margin-top: 4px; padding: 6px .55rem 2px; border-top: 1px solid var(--pc-pop-border); font-size: 12px; color: var(--pc-faint); display: flex; gap: 12px; }
+
+/* hover card */
+.hover { position: fixed; z-index: 50; display: none; max-width: 380px; padding: .55rem .7rem; font-size: 13px; }
+.hover.show { display: block; }
+.hover .hc-title { display: flex; align-items: center; gap: 6px; font-weight: 600; }
+.hover .hc-path { margin-top: 3px; font-family: var(--pc-mono); font-size: 12px; color: var(--pc-muted); word-break: break-all; }
+.hover .hc-sub { margin-top: 4px; display: flex; align-items: center; gap: 6px; color: var(--pc-muted); }
+.hover .hc-sub.warn { color: var(--pc-warn); }
+.hover .hc-sub .ic { width: 13px; height: 13px; }
+.hover .hc-foot { margin-top: 6px; font-size: 12px; color: var(--pc-faint); }
+.hover .thumb { display: block; margin-top: 8px; max-width: 240px; border-radius: 4px; }
+
+/* bubble menu (selection) */
+.bubble { position: absolute; z-index: 30; display: flex; align-items: center; gap: 2px; padding: 4px; border-radius: 12px; }
+.bubble .tt-btn { height: 30px; min-width: 30px; padding: 0 7px; border-radius: 8px; }
+.bubble .tt-sep { height: 20px; margin: 0 2px; }
+
+/* "/" command menu */
+.slash { position: fixed; z-index: 40; width: 260px; max-width: calc(100vw - 24px); display: none; flex-direction: column; padding: .4rem; }
+.slash.show { display: flex; }
+.slash .list { max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 1px; }
+.slash button > .ic { color: var(--pc-muted); }
+.slash .empty { padding: .5rem .55rem; color: var(--pc-faint); }
+
+/* drop overlay */
+.drop-hint {
+  position: absolute; inset: 8px; z-index: 5; display: none; align-items: flex-start; justify-content: center; pointer-events: none;
+  border: 2px dashed var(--pc-accent); border-radius: 12px; background: color-mix(in srgb, var(--pc-accent) 6%, transparent);
+}
+.drop-hint span { margin-top: 16px; padding: 6px 12px; }
+.drop-hint.show { display: flex; }
+.drop-hint.blocked { border-color: var(--pc-warn); background: var(--pc-warn-bg); }
+
+/* ==================================================================
+ * 4. VS Code-native pieces: raw text editor, status bar, toast, quick input
+ * ================================================================== */
+.rawinfo {
+  flex: none; display: flex; gap: 6px; align-items: center; padding: 4px 12px; font-size: 12px;
+  color: var(--vscode-descriptionForeground); border-bottom: 1px dashed var(--mock-accent);
+  background: color-mix(in srgb, var(--mock-bar) 70%, transparent);
+}
+.raw-scroll { flex: 1; overflow: auto; background: var(--vscode-editor-background); }
+.raw-code { margin: 0; padding: 8px 0 80px; font-family: var(--vscode-editor-font-family); font-size: 13px; line-height: 19px; white-space: pre; color: var(--vscode-editor-foreground); }
+.raw-code .ln { display: flex; }
+.raw-code .num { width: 44px; flex: none; text-align: right; padding-right: 16px; color: var(--vscode-editorLineNumber-foreground); user-select: none; }
+.raw-code .txt { padding-right: 16px; }
+.raw-code .h { color: var(--raw-heading); font-weight: 600; }
+.raw-code .m { color: var(--raw-mention); }
+.raw-code .img { color: var(--raw-image); }
+.raw-code .mk { color: var(--raw-marker); }
+.raw-code .fence { color: var(--raw-code); }
+.raw-code .q { color: var(--raw-quote); }
+.raw-code .changed { background: color-mix(in srgb, var(--vscode-focusBorder) 18%, transparent); }
+
+.statusbar {
+  display: flex; align-items: center; padding: 0 4px; font-size: 12px; white-space: nowrap; overflow: hidden;
+  background: var(--vscode-statusBar-background); color: var(--vscode-statusBar-foreground); border-top: 1px solid var(--vscode-panel-border);
+}
+.statusbar .item { display: inline-flex; align-items: center; gap: 4px; padding: 0 6px; height: 100%; }
+.statusbar .item .codicon { font-size: 14px; }
+.statusbar .item.click { cursor: pointer; }
+.statusbar .item.click:hover { background: var(--vscode-statusBarItem-hoverBackground); }
+.statusbar .right { margin-left: auto; display: flex; height: 100%; }
+.statusbar .warn { color: var(--vscode-editorWarning-foreground); }
+.statusbar .ext { color: var(--vscode-textLink-foreground); }
+
+.quickinput {
+  position: fixed; z-index: 60; top: 74px; left: 50%; transform: translateX(-50%); width: min(600px, calc(100vw - 24px));
+  display: none; flex-direction: column; gap: 6px; padding: 6px;
+  background: var(--vscode-quickInput-background); border: 1px solid var(--vscode-widget-border);
+  border-radius: 6px; box-shadow: 0 0 8px 2px var(--vscode-widget-shadow);
+}
+.quickinput.show { display: flex; }
+.quickinput input { font: inherit; color: inherit; background: var(--vscode-input-background); border: 1px solid var(--vscode-focusBorder); border-radius: 4px; padding: 4px 6px; outline: none; }
+.quickinput .msg { font-size: 12px; color: var(--vscode-descriptionForeground); padding: 0 2px 2px; }
+
+.toast {
+  position: fixed; z-index: 70; right: 12px; bottom: 34px; width: min(380px, calc(100vw - 24px)); display: none; gap: 10px; padding: 10px 12px;
+  background: var(--vscode-notifications-background); border: 1px solid var(--vscode-notificationToast-border);
+  border-radius: 6px; box-shadow: 0 0 8px 2px var(--vscode-widget-shadow);
+}
+.toast.show { display: flex; }
+.toast > .codicon { color: var(--vscode-textLink-foreground); margin-top: 1px; }
+.toast .t1 { font-weight: 600; }
+.toast .t2 { color: var(--vscode-descriptionForeground); margin-top: 2px; word-break: break-word; }
+.toast .x { margin-left: auto; }
+.loading { padding: 40px; color: var(--pc-faint); }
+</style>
+</head>
+<body class="m-at show-toolbar tb-mid smooth-caret line-numbers">
+<div class="app">
+  <!-- Mockup-only controls: not part of the extension UI -->
+  <div class="mockbar" role="toolbar" aria-label="Mockup controls">
+    <span class="tag">Mockup controls</span>
+    <label class="ctl"><span>Theme</span><span class="seg" data-ctl="theme"><button data-v="dark" aria-pressed="true">Dark</button><button data-v="light">Light</button></span></label>
+    <label class="ctl"><span>Editor colors</span><span class="seg" data-ctl="look"><button data-v="vscode" aria-pressed="true">VS Code theme</button><button data-v="tiptap">Tiptap colors</button></span></label>
+    <label class="ctl"><span>Mentions</span><span class="seg" data-ctl="mentions"><button data-v="at" aria-pressed="true">@name</button><button data-v="icon">Icon + name</button><button data-v="plain">Plain</button></span></label>
+    <label class="ctl"><span>Toolbar</span><span class="seg" data-ctl="toolbar"><button data-v="mid" aria-pressed="true">Mid</button><button data-v="full">Full width</button><button data-v="off">Off</button></span></label>
+    <label class="ctl"><span>Width</span><span class="seg" data-ctl="width"><button data-v="readable" aria-pressed="true">Readable</button><button data-v="full">Full</button></span></label>
+    <label class="ctl"><span>Caret</span><span class="seg" data-ctl="caret"><button data-v="smooth" aria-pressed="true">Smooth</button><button data-v="native">Native</button></span></label>
+    <label class="ctl"><span>Line numbers</span><span class="seg" data-ctl="lines"><button data-v="on" aria-pressed="true">On</button><button data-v="off">Off</button></span></label>
+    <label class="ctl"><span>Side bar</span><span class="seg" data-ctl="side"><button data-v="prompts" aria-pressed="true">Prompts</button><button data-v="explorer">Explorer</button><button data-v="hide">Hide</button></span></label>
+    <label class="ctl"><span>File on disk</span><span class="seg" data-ctl="raw"><button data-v="show" aria-pressed="true">Show</button><button data-v="hide">Hide</button></span></label>
+    <button class="linkbtn" id="reset">Reset content</button>
+  </div>
+
+  <div class="titlebar">
+    <div class="menus"><span>File</span><span>Edit</span><span>Selection</span><span>View</span><span>Go</span><span>Run</span><span>Terminal</span><span>Help</span></div>
+    <div class="cc"><i class="codicon codicon-search" style="font-size:14px"></i>my-app</div>
+    <div class="wincontrols">
+      <i class="codicon codicon-layout-sidebar-left layout"></i><i class="codicon codicon-layout-panel-off layout"></i><i class="codicon codicon-layout-sidebar-right-off layout"></i>
+      <i class="codicon codicon-chrome-minimize"></i><i class="codicon codicon-chrome-maximize"></i><i class="codicon codicon-chrome-close"></i>
+    </div>
+  </div>
+
+  <div class="workbench">
+    <nav class="activitybar">
+      <i class="codicon codicon-files" data-view="explorer" title="Explorer"></i><i class="codicon codicon-search"></i><i class="codicon codicon-source-control"></i>
+      <i class="codicon codicon-debug-alt"></i><i class="codicon codicon-extensions"></i>
+      <i class="codicon codicon-note active" data-view="prompts" title="Prompt Composer"></i>
+      <span class="spacer"></span><i class="codicon codicon-account"></i><i class="codicon codicon-settings-gear"></i>
+    </nav>
+
+    <aside class="sidebar" id="sidebar">
+      <div class="view" id="viewExplorer">
+        <div class="title"><span>EXPLORER</span><i class="codicon codicon-ellipsis"></i></div>
+        <div class="section"><i class="codicon codicon-chevron-down"></i>MY-APP</div>
+        <div class="tree" id="tree"></div>
+      </div>
+      <!-- Prompt Composer panel: a webview view in the Primary Side Bar. Title-bar buttons are native ("view/title" menu). -->
+      <div class="view show" id="viewPrompts">
+        <div class="title"><span>PROMPT COMPOSER</span><span class="title-actions">
+          <button class="iconbtn" id="newPrompt" title="New Prompt (Ctrl+Alt+N)"><i class="codicon codicon-new-file"></i></button>
+          <button class="iconbtn" id="collapsePrompts" title="Collapse All"><i class="codicon codicon-collapse-all"></i></button>
+          <button class="iconbtn" id="viewMore" title="More Actions…"><i class="codicon codicon-ellipsis"></i></button>
+        </span></div>
+        <label class="lib-search" id="libSearchBox"><i class="codicon codicon-search"></i><input id="libSearch" placeholder="Search prompts" spellcheck="false" autocomplete="off"><button class="iconbtn" id="libClear" title="Clear Search"><i class="codicon codicon-close"></i></button></label>
+        <div class="lib-count" id="libCount"></div>
+        <div class="lib-tree" id="libTree" tabindex="0"></div>
+      </div>
+    </aside>
+
+    <div class="groups">
+      <!-- Group 1: the composer custom editor -->
+      <section class="group">
+        <div class="tabs">
+          <div class="tab active" id="composerTab">
+            <i class="codicon codicon-edit" style="font-size:14px;color:var(--vscode-textLink-foreground)"></i>
+            <span id="tabTitle">prompt.md</span>
+            <span class="close" title="Close"><i class="codicon codicon-close" style="font-size:14px"></i><span class="dot"></span></span>
+          </div>
+          <div class="tab-actions">
+            <button class="iconbtn" id="copyPrompt" title="Copy as prompt"><i class="codicon codicon-copy"></i></button>
+            <button class="iconbtn on" id="openText" title="Open as text (to the side)"><i class="codicon codicon-go-to-file"></i></button>
+            <button class="iconbtn" title="Split editor right"><i class="codicon codicon-split-horizontal"></i></button>
+            <button class="iconbtn" title="More actions…"><i class="codicon codicon-ellipsis"></i></button>
+          </div>
+        </div>
+
+        <div class="webview" id="webview" data-look="vscode">
+          <div class="tt-toolbar" id="toolbar"><div class="tt-bar" role="toolbar" aria-label="Formatting">
+            <div class="tt-group">
+              <button class="tt-btn" data-dd="heading" title="Heading"><span class="ic i-heading" data-icon></span><span class="ic sm i-chevron-down"></span></button>
+              <button class="tt-btn" data-dd="list" title="List"><span class="ic i-list" data-icon></span><span class="ic sm i-chevron-down"></span></button>
+              <button class="tt-btn" data-cmd="blockquote" title="Quote"><span class="ic i-text-quote"></span></button>
+              <button class="tt-btn" data-cmd="codeBlock" title="Code block"><span class="ic i-square-code"></span></button>
+            </div>
+            <span class="tt-sep"></span>
+            <div class="tt-group">
+              <button class="tt-btn" data-cmd="bold" title="Bold (Ctrl+B)"><span class="ic i-bold"></span></button>
+              <button class="tt-btn" data-cmd="italic" title="Italic (Ctrl+I)"><span class="ic i-italic"></span></button>
+              <button class="tt-btn" data-cmd="strike" title="Strikethrough (Ctrl+Shift+S)"><span class="ic i-strikethrough"></span></button>
+              <button class="tt-btn" data-cmd="code" title="Inline code (Ctrl+E)"><span class="ic i-code"></span></button>
+              <button class="tt-btn" data-cmd="link" title="Link (Ctrl+K)"><span class="ic i-link"></span></button>
+            </div>
+            <span class="tt-sep"></span>
+            <div class="tt-group">
+              <button class="tt-btn" data-cmd="mention" title="Mention a file or folder (@)"><span class="ic i-at-sign"></span></button>
+              <button class="tt-btn" data-cmd="image" title="Add image"><span class="ic i-image-plus"></span></button>
+            </div>
+          </div></div>
+          <div class="scroller" id="scroller">
+            <div class="composer" id="composer">
+              <div class="ln-gutter" id="lnGutter" aria-hidden="true"></div>
+              <button class="drag-handle" id="dragHandle" draggable="true" title="Drag to move · Click for options"><span class="ic i-grip-vertical"></span></button>
+              <div id="editor"><div class="loading">Loading editor…</div></div>
+            </div>
+          </div>
+          <div class="drop-hint" id="dropHint"><span class="tt-pop" id="dropHintText"></span></div>
+        </div>
+      </section>
+
+      <!-- Group 2: VS Code's own text editor on the same file (mockup of "Open as text") -->
+      <section class="group raw" id="rawGroup">
+        <div class="tabs">
+          <div class="tab active">
+            <i class="codicon codicon-markdown" style="font-size:14px;color:var(--raw-mention)"></i>
+            <span id="rawTitle">prompt.md</span><span class="desc">text</span>
+            <span class="close"><i class="codicon codicon-close" style="font-size:14px"></i></span>
+          </div>
+        </div>
+        <div class="rawinfo"><i class="codicon codicon-info" style="font-size:14px"></i>Mockup panel: the exact text saved to disk.</div>
+        <div class="raw-scroll"><div class="raw-code" id="raw"></div></div>
+      </section>
+    </div>
+  </div>
+
+  <footer class="statusbar">
+    <span class="item"><i class="codicon codicon-source-control"></i>main*</span>
+    <span class="item"><i class="codicon codicon-error"></i>0 <i class="codicon codicon-warning"></i>0</span>
+    <div class="right">
+      <span class="item click" id="sbMentions" title="Mentions in this prompt (click to jump to a broken one)"></span>
+      <span class="item" id="sbImages" title="Images in this prompt"></span>
+      <span class="item" id="sbSize" title="Rough estimate: characters ÷ 4"></span>
+      <span class="item ext"><i class="codicon codicon-edit"></i>Prompt Composer</span>
+      <span class="item">Markdown</span>
+      <span class="item"><i class="codicon codicon-bell"></i></span>
+    </div>
+  </footer>
+</div>
+
+<!-- webview popovers (live inside .webview so they pick up the editor look) -->
+<div id="popRoot"></div>
+<div hidden>
+  <div class="picker tt-pop" id="picker" role="listbox"><div class="list" id="pickerList"></div><div class="hint"><span>↵ insert</span><span>Tab open folder</span><span>Esc close</span></div></div>
+  <div class="hover tt-pop" id="hover"></div>
+  <div class="tt-menu tt-pop" id="menu-heading" data-menu="heading">
+    <button data-cmd="paragraph"><span class="ic i-pilcrow"></span><span class="lbl">Text</span></button>
+    <button data-cmd="h1"><span class="ic i-heading-1"></span><span class="lbl">Heading 1</span><kbd>#</kbd></button>
+    <button data-cmd="h2"><span class="ic i-heading-2"></span><span class="lbl">Heading 2</span><kbd>##</kbd></button>
+    <button data-cmd="h3"><span class="ic i-heading-3"></span><span class="lbl">Heading 3</span><kbd>###</kbd></button>
+  </div>
+  <div class="tt-menu tt-pop" id="menu-list" data-menu="list">
+    <button data-cmd="bulletList"><span class="ic i-list"></span><span class="lbl">Bullet list</span><kbd>-</kbd></button>
+    <button data-cmd="orderedList"><span class="ic i-list-ordered"></span><span class="lbl">Ordered list</span><kbd>1.</kbd></button>
+    <button data-cmd="taskList"><span class="ic i-list-todo"></span><span class="lbl">Task list</span><kbd>[ ]</kbd></button>
+  </div>
+  <div class="tt-menu tt-pop" id="menu-block" data-menu="block">
+    <button data-bcmd="up"><span class="ic i-arrow-up"></span><span class="lbl">Move up</span><kbd>Alt+↑</kbd></button>
+    <button data-bcmd="down"><span class="ic i-arrow-down"></span><span class="lbl">Move down</span><kbd>Alt+↓</kbd></button>
+    <button data-bcmd="duplicate"><span class="ic i-copy"></span><span class="lbl">Duplicate</span></button>
+    <button data-bcmd="delete"><span class="ic i-trash-2"></span><span class="lbl">Delete</span></button>
+  </div>
+  <div class="tt-menu tt-pop lang-menu" id="menu-lang" data-menu="lang"></div>
+  <!-- Tiptap's BubbleMenu moves this into the editor when it shows -->
+  <div class="bubble tt-pop" id="bubble" role="toolbar" aria-label="Format selection">
+    <button class="tt-btn" data-cmd="bold" title="Bold"><span class="ic i-bold"></span></button>
+    <button class="tt-btn" data-cmd="italic" title="Italic"><span class="ic i-italic"></span></button>
+    <button class="tt-btn" data-cmd="strike" title="Strikethrough"><span class="ic i-strikethrough"></span></button>
+    <button class="tt-btn" data-cmd="code" title="Inline code"><span class="ic i-code"></span></button>
+    <button class="tt-btn" data-cmd="link" title="Link"><span class="ic i-link"></span></button>
+    <span class="tt-sep"></span>
+    <button class="tt-btn" data-cmd="h2" title="Turn into heading"><span class="ic i-heading"></span></button>
+    <button class="tt-btn" data-cmd="bulletList" title="Turn into list"><span class="ic i-list"></span></button>
+    <button class="tt-btn" data-cmd="clear" title="Clear formatting"><span class="ic i-remove-formatting"></span></button>
+  </div>
+  <!-- "/" command menu, driven by Tiptap's suggestion plugin -->
+  <div class="slash tt-pop" id="slash" role="listbox"><div class="list" id="slashList"></div><div class="hint"><span>↑↓ select</span><span>↵ insert</span><span>Esc close</span></div></div>
+</div>
+<div class="quickinput" id="quickinput"><input id="qiInput" placeholder="Paste or type a URL"><div class="msg">Press Enter to confirm or Escape to cancel (VS Code native input)</div></div>
+<div class="toast" id="toast"><i class="codicon codicon-info"></i><div><div class="t1" id="toastT1"></div><div class="t2" id="toastT2"></div></div><button class="iconbtn x" id="toastX"><i class="codicon codicon-close"></i></button></div>
+<input type="file" id="filePicker" accept="image/*" multiple hidden>
+<!-- Panel ⋯ menu: native "view/title" submenu; Show All Months is a toggled item bound to the setting -->
+<div class="vsc-menu" id="viewMenu" role="menu">
+  <button data-vact="months" role="menuitemcheckbox"><i class="chk codicon codicon-check"></i>Show All Months</button>
+  <div class="sep"></div>
+  <button data-vact="folder">Reveal Prompts Folder in Explorer</button>
+</div>
+<div class="vsc-menu" id="libMenu" role="menu">
+  <button data-act="open">Open</button>
+  <button data-act="side">Open to the Side<kbd>Ctrl+Enter</kbd></button>
+  <div class="sep"></div>
+  <button data-act="copy">Copy as Prompt</button>
+  <button data-act="path">Copy @Path for Claude</button>
+  <div class="sep"></div>
+  <button data-act="pin">Pin</button>
+  <button data-act="dup">Duplicate</button>
+  <button data-act="reveal">Reveal in Explorer</button>
+  <div class="sep"></div>
+  <button data-act="delete">Delete<kbd>Delete</kbd></button>
+</div>
+
+<script type="module">
+const {
+  Editor, Extension, mergeAttributes, NodeSelection, TextSelection, PluginKey, StarterKit, Mention, Image, Placeholder,
+  TaskList, TaskItem, BubbleMenu, Suggestion, CodeBlockLowlight, createLowlight, common,
+} = window.Tiptap;
+
+const $ = (s) => document.querySelector(s);
+// 2 device pixels in CSS px, so thin borders land exactly on the screen's pixels at 125%/150% scaling.
+// Zooming or moving to another monitor fires resize, which re-measures.
+const setDevicePixels = () => document.documentElement.style.setProperty('--px2', `${2 / window.devicePixelRatio}px`);
+setDevicePixels();
+window.addEventListener('resize', setDevicePixels);
+const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const webview = $('#webview');
+// Popovers live inside the webview element so they inherit its --pc-* tokens.
+for (const id of ['picker', 'slash', 'hover', 'menu-heading', 'menu-list', 'menu-block', 'menu-lang']) webview.appendChild(document.getElementById(id));
+
+/* ------------------------------------------------------------------
+ * Fake workspace. In the extension this comes from the host-side index
+ * (lstat/readlink walk). `link` = symlink target as written on disk.
+ * Prompt Composer only ever writes inside its own .prompt-composer/ folder,
+ * and nothing else (no AI agent) writes there.
+ * ------------------------------------------------------------------ */
+const STORE = '.prompt-composer';
+const pad = (n) => String(n).padStart(2, '0');
+const ym = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+const IMAGES = {};   // workspace path → image data (stands in for the files in .prompt-composer/images)
+// Prompts sit one level down (YYYY-MM/x.md), so images are linked as ../images/x.png
+const relFromPrompt = (wsPath) => '../' + wsPath.slice(STORE.length + 1);
+const wsFromRel = (rel) => STORE + '/' + rel.replace(/^(\.\.\/)+/, '');
+let PROMPTS = [];    // filled in after the sample content below
+const BASE_FILES = [
+  ['.claude', 'dir'], ['.claude/settings.json'], ['.claude/commands', 'dir'], ['.claude/commands/review.md'],
+  ['CLAUDE.md', 'file', '../shared-libs/CLAUDE.shared.md'],
+  ['README.md'], ['package.json'], ['tsconfig.json'],
+  ['docs', 'dir'], ['docs/architecture.md'],
+  ['shared', 'dir', '../shared-libs/common'], ['shared/types.ts'], ['shared/utils', 'dir'],
+  ['shared/utils/date.ts'], ['shared/utils/strings.ts'], ['shared/utils/index.ts'],
+  ['src', 'dir'], ['src/client', 'dir'], ['src/client/App.tsx'], ['src/client/index.ts'],
+  ['src/client/hooks', 'dir'], ['src/client/hooks/useSession.ts'],
+  ['src/config', 'dir', '../../infra/config'], ['src/config/env.ts'], ['src/config/flags.ts'],
+  ['src/server', 'dir'], ['src/server/auth.ts'], ['src/server/index.ts'], ['src/server/routes.ts'], ['src/server/token.ts'],
+  ['src/server/middleware', 'dir'], ['src/server/middleware/rateLimit.ts'], ['src/server/middleware/session.ts'],
+];
+const RECENT = ['src/server/auth.ts', 'src/server/token.ts', 'CLAUDE.md', 'src/client/hooks/useSession.ts'];
+
+// Prompt files: .prompt-composer/YYYY-MM/DD-HHmm-<title-slug>.md. The folder is only ever one level deep:
+// month folders and one flat images/ folder. Month folders keep each folder small; DD-HHmm sorts by day and time.
+const slugify = (t) => (t || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 48) || 'untitled';
+const promptPath = (p) => `${STORE}/${ym(p.created)}/${pad(p.created.getDate())}-${pad(p.created.getHours())}${pad(p.created.getMinutes())}-${p.slug}.md`;
+const fileName = (p) => promptPath(p).split('/').pop();
+// Two prompts made in the same minute with the same title get -2, -3… so no file is ever overwritten.
+function uniqueSlug(p, base) {
+  let slug = base, n = 2;
+  const taken = () => PROMPTS.some((q) => q !== p && promptPath(q) === promptPath({ ...p, slug }));
+  while (taken()) slug = `${base}-${n++}`;
+  return slug;
+}
+
+let ENTRIES = [], BY_PATH = new Map();
+function buildWorkspace() {
+  // .prompt-composer/ is one level deep: .gitignore, a flat images/ folder, and one folder per month.
+  const files = [...BASE_FILES, [STORE, 'dir'], [STORE + '/.gitignore'], [STORE + '/images', 'dir']];
+  const months = new Set();
+  for (const p of PROMPTS) {
+    const f = promptPath(p), dir = f.slice(0, f.lastIndexOf('/'));
+    if (!months.has(dir)) { months.add(dir); files.push([dir, 'dir']); }
+    files.push([f]);
+  }
+  for (const img of Object.keys(IMAGES)) files.push([img]);
+  ENTRIES = files.map(([path, kind = 'file', link = null]) => {
+    const i = path.lastIndexOf('/');
+    const dir = i < 0 ? '' : path.slice(0, i + 1);
+    return { path, kind, link, name: path.slice(i + 1), dir, depth: path.split('/').length - 1 };
+  });
+  BY_PATH = new Map(ENTRIES.map((e) => [e.path, e]));
+  for (const e of ENTRIES) {
+    // nearest symlinked ancestor, so the hover can say "inside symlinked shared → ../shared-libs/common"
+    const parts = e.path.split('/');
+    for (let n = parts.length - 1; n > 0; n--) {
+      const anc = BY_PATH.get(parts.slice(0, n).join('/'));
+      if (anc && anc.link) { e.via = anc; break; }
+    }
+  }
+}
+buildWorkspace();
+
+const isImage = (name) => /\.(png|jpe?g|gif|webp|svg)$/i.test(name);
+// Editor icons (Lucide); the Explorer keeps VS Code's codicons.
+function iconFor(e) {
+  if (!e) return 'i-triangle-alert';
+  if (e.link) return e.kind === 'dir' ? 'i-folder-symlink' : 'i-file-symlink';
+  if (e.kind === 'dir') return 'i-folder';
+  if (isImage(e.name)) return 'i-file-image';
+  if (/\.md$/i.test(e.name)) return 'i-file-text';
+  if (/\.json$/i.test(e.name)) return 'i-file-json';
+  if (/\.(ts|tsx|js|jsx)$/i.test(e.name)) return 'i-file-code';
+  return 'i-file';
+}
+function codiconFor(e) {
+  if (e.link) return e.kind === 'dir' ? 'file-symlink-directory' : 'file-symlink-file';
+  if (e.kind === 'dir') return 'folder';
+  if (isImage(e.name)) return 'file-media';
+  if (/\.md$/i.test(e.name)) return 'markdown';
+  if (/\.json$/i.test(e.name)) return 'json';
+  if (/\.(ts|tsx|js|jsx)$/i.test(e.name)) return 'file-code';
+  return 'file';
+}
+
+/* A stored mention (`src/a.ts`, `src/config/`) shows only its own name in the editor. */
+function mentionInfo(id) {
+  const isDir = id.endsWith('/');
+  const clean = isDir ? id.slice(0, -1) : id;
+  const e = BY_PATH.get(clean);
+  return { e, isDir, label: clean.split('/').pop(), broken: !e, icon: iconFor(e) };
+}
+
+/* ------------------------------------------------------------------
+ * Fuzzy search. Runs on the extension host in the real thing;
+ * the webview only receives the top results.
+ * q is lower-case. After the first letter, each letter must continue the
+ * previous match or start a word (after / . _ - or a camelCase hump).
+ * ------------------------------------------------------------------ */
+function fuzzy(q, orig) {
+  const t = orig.toLowerCase();
+  const isStart = (j) => j === 0 || '/._- '.includes(t[j - 1]) || (orig[j] !== t[j] && orig[j - 1] === t[j - 1]);
+  const pos = [];
+  let best = null;
+  (function go(qi, from, score) {
+    if (best && best.score >= score + (q.length - qi) * 14) return;
+    if (qi === q.length) { if (!best || score > best.score) best = { score, pos: pos.slice() }; return; }
+    for (let j = t.indexOf(q[qi], from); j >= 0; j = t.indexOf(q[qi], j + 1)) {
+      const consecutive = qi > 0 && j === pos[qi - 1] + 1;
+      const start = isStart(j);
+      if (qi > 0 && !consecutive && !start) continue;
+      pos.push(j);
+      go(qi + 1, j + 1, score + 1 + (consecutive ? 5 : 0) + (start ? 8 : 0));
+      pos.pop();
+    }
+  })(0, 0, 0);
+  if (!best) return null;
+  if (t.startsWith(q)) best.score += 10;
+  best.score -= (t.length - q.length) * 0.05;
+  return best;
+}
+
+function search(query) {
+  const q = query.toLowerCase();
+  // Prompt Composer's own folder (prompts, images) is never offered as an @ mention
+  const pool = ENTRIES.filter((e) => e.path !== STORE && !e.path.startsWith(STORE + '/'));
+  if (!q) {
+    const recent = RECENT.map((p) => ({ e: BY_PATH.get(p), pos: [], group: 'Recent' }));
+    const rest = pool.filter((e) => !RECENT.includes(e.path))
+      .sort((a, b) => a.depth - b.depth || (a.kind === b.kind ? a.path.localeCompare(b.path) : a.kind === 'dir' ? -1 : 1))
+      .map((e) => ({ e, pos: [], group: 'Files and folders' }));
+    return [...recent, ...rest].slice(0, 50);
+  }
+  const out = [];
+  const slash = q.lastIndexOf('/');
+  if (slash >= 0) {
+    // "src/ser" → everything under src/, fuzzy-matched on the rest; Tab drills into folders.
+    const base = q.slice(0, slash + 1), term = q.slice(slash + 1);
+    const folder = base.slice(0, -1).split('/').pop();
+    for (const e of pool) {
+      if (!e.path.toLowerCase().startsWith(base) || e.path.length === base.length) continue;
+      const rest = e.path.slice(base.length);
+      const depth = rest.split('/').length - 1;
+      if (!term) { out.push({ e, pos: [], score: 100 - depth * 20 + (e.kind === 'dir' ? 1 : 0), group: `In ${folder}` }); continue; }
+      const m = fuzzy(term, rest);
+      if (m) out.push({ e, pos: m.pos.map((p) => p + base.length), score: m.score - depth * 3, group: `In ${folder}` });
+    }
+    if (out.length) return out.sort((a, b) => b.score - a.score).slice(0, 50);
+  }
+  for (const e of pool) {
+    const mn = fuzzy(q, e.name);
+    let r = null;
+    if (mn) r = { e, pos: mn.pos.map((p) => p + e.dir.length), score: 1000 + mn.score - e.depth };
+    else {
+      const mp = fuzzy(q, e.path);
+      if (mp) r = { e, pos: mp.pos, score: mp.score - e.depth };
+    }
+    if (r) { if (RECENT.includes(e.path)) r.score += 30; out.push(r); }
+  }
+  return out.sort((a, b) => b.score - a.score).slice(0, 50);
+}
+
+/* ------------------------------------------------------------------
+ * @ picker: Tiptap-style dropdown, driven by Tiptap's suggestion plugin.
+ * Rows show the name, plus the parent folder's name (not the path) so
+ * index.ts in server/ and client/ can be told apart.
+ * ------------------------------------------------------------------ */
+const picker = (() => {
+  const box = $('#picker'), list = $('#pickerList');
+  let props = null, items = [], sel = 0;
+
+  function place() {
+    const r = props?.clientRect?.();
+    if (!r) return;
+    const h = box.offsetHeight || 300, w = box.offsetWidth || 320;
+    let top = r.bottom + 6;
+    if (top + h > window.innerHeight - 26) top = Math.max(8, r.top - h - 6);
+    box.style.top = top + 'px';
+    box.style.left = Math.min(Math.max(8, r.left - 6), window.innerWidth - w - 8) + 'px';
+  }
+  // highlight matched letters of e.path[from, from + text.length)
+  function marked(text, from, pos) {
+    let html = '';
+    for (let i = 0; i < text.length; i++) {
+      const ch = esc(text[i]);
+      html += pos.includes(from + i) ? `<b>${ch}</b>` : ch;
+    }
+    return html;
+  }
+  function render() {
+    if (!items.length) {
+      list.innerHTML = `<div class="empty">${props?.loading ? 'Searching…' : 'No files or folders found'}</div>`;
+    } else {
+      let html = '', lastGroup = null;
+      items.forEach((it, i) => {
+        if (it.group && it.group !== lastGroup && (props.query === '' || props.query.includes('/'))) { html += `<div class="tt-label">${esc(it.group)}</div>`; lastGroup = it.group; }
+        const e = it.e;
+        const path = marked(e.path, 0, it.pos) + (e.kind === 'dir' ? '/' : '');
+        const link = e.link ? `<span class="ic i-arrow-right"></span>${esc(e.link)}` : e.via ? '<span class="ic i-link-2" title="Inside a symlinked folder"></span>' : '';
+        html += `<div class="pk-item${i === sel ? ' sel' : ''}" data-i="${i}" role="option" title="${esc(e.path)}${e.link ? ' → ' + esc(e.link) : ''}">` +
+          `<span class="ic ${iconFor(e)}"></span><span class="pk-text"><span class="pk-name">${marked(e.name, e.dir.length, it.pos)}</span>` +
+          `<span class="pk-path">${path}${link}</span></span></div>`;
+      });
+      list.innerHTML = html;
+      list.querySelector('.pk-item.sel')?.scrollIntoView({ block: 'nearest' });
+    }
+    place();
+  }
+  function choose(i) {
+    const e = items[i]?.e;
+    if (e) props.command({ id: e.kind === 'dir' ? e.path + '/' : e.path, label: e.name });
+  }
+  function drill(i) {
+    const it = items[i];
+    if (!it) return false;
+    if (it.e.kind !== 'dir') { choose(i); return true; }
+    props.editor.chain().focus().insertContentAt(props.range, '@' + it.e.path + '/').run();
+    return true;
+  }
+  list.addEventListener('mousedown', (ev) => {
+    const row = ev.target.closest('.pk-item');
+    if (!row) return;
+    ev.preventDefault();
+    choose(+row.dataset.i);
+  });
+  return {
+    onStart(p) { props = p; items = p.items || []; sel = 0; box.classList.add('show'); hideHover(); render(); },
+    onUpdate(p) {
+      if (p.query !== props?.query) sel = 0;
+      props = p; items = p.items || []; sel = Math.min(sel, Math.max(0, items.length - 1));
+      render();
+    },
+    onKeyDown({ event }) {
+      if (event.key === 'Escape') { box.classList.remove('show'); return true; }
+      if (!items.length) return false;
+      if (event.key === 'ArrowDown') { sel = (sel + 1) % items.length; render(); return true; }
+      if (event.key === 'ArrowUp') { sel = (sel - 1 + items.length) % items.length; render(); return true; }
+      if (event.key === 'Enter') { choose(sel); return true; }
+      if (event.key === 'Tab') return drill(sel);
+      return false;
+    },
+    onExit() { box.classList.remove('show'); props = null; items = []; },
+  };
+})();
+
+/* ------------------------------------------------------------------
+ * Tiptap extensions
+ * ------------------------------------------------------------------ */
+const FileMention = Mention.configure({
+  HTMLAttributes: { class: 'mention' },
+  renderText: ({ node }) => '@' + node.attrs.id,
+  renderHTML: ({ options, node }) => {
+    const info = mentionInfo(node.attrs.id);
+    const cls = ['mention', info.broken && 'is-broken', info.isDir && 'is-dir'].filter(Boolean).join(' ');
+    return ['span', mergeAttributes(options.HTMLAttributes, { class: cls, 'data-path': node.attrs.id }),
+      ['span', { class: `ic ${info.icon}` }], ['span', { class: 'mention-label' }, info.label]];
+  },
+  suggestion: {
+    char: '@',
+    allowedPrefixes: [' ', '(', ' '],
+    items: ({ query }) => search(query),
+    render: () => picker,
+  },
+});
+
+// Images keep the on-disk path separately from the display src (data:/webview URI).
+const PathImage = Image.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      path: { default: null, parseHTML: (el) => el.getAttribute('data-path'), renderHTML: (a) => (a.path ? { 'data-path': a.path } : {}) },
+    };
+  },
+}).configure({ allowBase64: true });
+
+/* ------------------------------------------------------------------
+ * Code blocks: lowlight (highlight.js) syntax colours + a language picker
+ * in the block's corner. No auto-detect: a block without a language is plain text.
+ * ------------------------------------------------------------------ */
+// highlight.js gives every keyword one class. VS Code's Dark+/Light+ (which Dark/Light Modern use)
+// colour flow-control words differently (purple), so tag those to match.
+const CONTROL = new Set(['if', 'else', 'for', 'while', 'do', 'switch', 'case', 'default', 'break', 'continue', 'return', 'throw',
+  'try', 'catch', 'finally', 'await', 'yield', 'import', 'export', 'from', 'as', 'elif', 'except', 'raise', 'with', 'match', 'loop', 'goto']);
+function tagControl(tree) {
+  (function walk(n) {
+    const cls = n.properties?.className;
+    if (cls?.includes('hljs-keyword') && n.children?.length === 1 && CONTROL.has(n.children[0].value)) n.properties.className = [...cls, 'hljs-control'];
+    n.children?.forEach(walk);
+  })(tree);
+  return tree;
+}
+const hl = createLowlight(common);
+const lowlight = { ...hl, highlight: (...a) => tagControl(hl.highlight(...a)), highlightAuto: (...a) => tagControl(hl.highlightAuto(...a)) };
+const LANGS = [
+  ['plaintext', 'Plain text'], ['bash', 'Bash'], ['c', 'C'], ['cpp', 'C++'], ['csharp', 'C#'], ['css', 'CSS'],
+  ['diff', 'Diff'], ['go', 'Go'], ['xml', 'HTML / XML'], ['java', 'Java'], ['javascript', 'JavaScript'], ['json', 'JSON'],
+  ['kotlin', 'Kotlin'], ['markdown', 'Markdown'], ['php', 'PHP'], ['python', 'Python'], ['ruby', 'Ruby'], ['rust', 'Rust'],
+  ['sql', 'SQL'], ['swift', 'Swift'], ['typescript', 'TypeScript'], ['yaml', 'YAML'],
+];
+const ALIASES = { ts: 'typescript', tsx: 'typescript', js: 'javascript', jsx: 'javascript', sh: 'bash', shell: 'bash', zsh: 'bash', py: 'python', yml: 'yaml', html: 'xml', md: 'markdown', rs: 'rust', cs: 'csharp', 'c++': 'cpp', text: 'plaintext', txt: 'plaintext' };
+const langLabel = (l) => LANGS.find(([id]) => id === (ALIASES[l] || l))?.[1] || l || 'Plain text';
+
+let langTarget = null; // getPos of the block whose picker is open
+const CodeBlock = CodeBlockLowlight.extend({
+  addNodeView() {
+    return ({ node, getPos }) => {
+      const dom = document.createElement('pre');
+      const btn = document.createElement('button');
+      btn.className = 'cb-lang';
+      btn.contentEditable = 'false';
+      btn.title = 'Change language';
+      const code = document.createElement('code');
+      dom.append(btn, code);
+      const sync = (n) => {
+        btn.innerHTML = `${esc(langLabel(n.attrs.language))}<span class="ic i-chevron-down"></span>`;
+        code.className = n.attrs.language ? 'language-' + n.attrs.language : '';
+      };
+      sync(node);
+      btn.addEventListener('mousedown', (e) => { e.preventDefault(); openLangMenu(btn, getPos); });
+      return {
+        dom,
+        contentDOM: code,
+        update: (n) => { if (n.type.name !== 'codeBlock') return false; sync(n); return true; },
+        stopEvent: (e) => btn.contains(e.target),
+        ignoreMutation: (m) => m.type !== 'selection' && btn.contains(m.target),
+      };
+    };
+  },
+}).configure({ lowlight, defaultLanguage: 'plaintext' });
+
+function openLangMenu(btn, getPos) {
+  const menu = $('#menu-lang');
+  const current = ALIASES[editor.state.doc.nodeAt(getPos())?.attrs.language] || editor.state.doc.nodeAt(getPos())?.attrs.language || 'plaintext';
+  menu.innerHTML = LANGS.map(([id, label]) => `<button data-lang="${id}" class="${id === current ? 'on' : ''}"><span class="lbl">${esc(label)}</span>${id === current ? '<span class="ic i-check"></span>' : ''}</button>`).join('');
+  closeMenus();
+  langTarget = getPos;
+  const r = btn.getBoundingClientRect();
+  menu.classList.add('show');
+  const h = menu.offsetHeight;
+  menu.style.top = (r.bottom + 4 + h <= window.innerHeight - 8 ? r.bottom + 4 : Math.max(8, r.top - h - 4)) + 'px';
+  menu.style.left = Math.max(8, r.right - menu.offsetWidth) + 'px';
+  menu.querySelector('.on')?.scrollIntoView({ block: 'nearest' });
+}
+$('#menu-lang').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-lang]');
+  if (!b || !langTarget) return;
+  const pos = langTarget();
+  const lang = b.dataset.lang === 'plaintext' ? null : b.dataset.lang;
+  editor.view.dispatch(editor.state.tr.setNodeAttribute(pos, 'language', lang));
+  closeMenus();
+  editor.commands.focus();
+});
+
+/* ------------------------------------------------------------------
+ * Moving blocks up/down: Alt+↑ / Alt+↓ (same keys as VS Code's "Move Line"),
+ * the drag handle, and the handle's menu. The unit that moves is the list item
+ * the caret is in, otherwise the whole top-level block (paragraph, heading, code block, image…).
+ * ------------------------------------------------------------------ */
+function blockAt($pos) {
+  for (let d = $pos.depth; d > 0; d--) {
+    const n = $pos.node(d);
+    if (n.type.name === 'listItem' || n.type.name === 'taskItem') return $pos.before(d);
+  }
+  return $pos.depth >= 1 ? $pos.before(1) : null;
+}
+function selectedBlock() {
+  const sel = editor.state.selection;
+  if (sel instanceof NodeSelection && sel.node.isBlock) return sel.from;
+  return blockAt(sel.$from);
+}
+// Swap the block at `pos` with its previous/next sibling. Returns the new tr and how far it moved.
+function moveTr(pos, dir) {
+  const { state } = editor;
+  const $pos = state.doc.resolve(pos);
+  const node = $pos.nodeAfter, parent = $pos.parent, index = $pos.index();
+  if (!node || index + dir < 0 || index + dir >= parent.childCount) return null;
+  const sibling = parent.child(index + dir);
+  const target = dir < 0 ? pos - sibling.nodeSize : pos + sibling.nodeSize;
+  const tr = state.tr.delete(pos, pos + node.nodeSize).insert(target, node);
+  return { tr, shift: target - pos, target };
+}
+function moveSelectedBlock(dir) {
+  const pos = selectedBlock();
+  if (pos == null) return true;
+  const moved = moveTr(pos, dir);
+  if (!moved) return true;
+  const { tr, shift } = moved;
+  const sel = editor.state.selection;
+  tr.setSelection(sel instanceof NodeSelection
+    ? NodeSelection.create(tr.doc, sel.from + shift)
+    : TextSelection.create(tr.doc, sel.anchor + shift, sel.head + shift));
+  editor.view.dispatch(tr.scrollIntoView());
+  return true;
+}
+const MoveBlocks = Extension.create({
+  name: 'moveBlocks',
+  addKeyboardShortcuts() {
+    return { 'Alt-ArrowUp': () => moveSelectedBlock(-1), 'Alt-ArrowDown': () => moveSelectedBlock(1) };
+  },
+});
+
+/* ------------------------------------------------------------------
+ * "/" commands: type / at the start of a line or after a space, filter by typing
+ * (/h2, /todo, /code…), Enter runs it. Not triggered inside code blocks.
+ * ------------------------------------------------------------------ */
+const SLASH_ITEMS = [
+  { cmd: 'paragraph', label: 'Text', icon: 'i-pilcrow', keys: 'text paragraph plain body', group: 'Basic blocks' },
+  { cmd: 'h1', label: 'Heading 1', icon: 'i-heading-1', hint: '#', keys: 'h1 heading title', group: 'Basic blocks' },
+  { cmd: 'h2', label: 'Heading 2', icon: 'i-heading-2', hint: '##', keys: 'h2 heading subtitle', group: 'Basic blocks' },
+  { cmd: 'h3', label: 'Heading 3', icon: 'i-heading-3', hint: '###', keys: 'h3 heading', group: 'Basic blocks' },
+  { cmd: 'bulletList', label: 'Bullet list', icon: 'i-list', hint: '-', keys: 'bullet list unordered ul', group: 'Basic blocks' },
+  { cmd: 'orderedList', label: 'Numbered list', icon: 'i-list-ordered', hint: '1.', keys: 'numbered ordered list ol', group: 'Basic blocks' },
+  { cmd: 'taskList', label: 'Task list', icon: 'i-list-todo', hint: '[ ]', keys: 'task todo checkbox checklist', group: 'Basic blocks' },
+  { cmd: 'blockquote', label: 'Quote', icon: 'i-text-quote', hint: '>', keys: 'quote blockquote', group: 'Basic blocks' },
+  { cmd: 'codeBlock', label: 'Code block', icon: 'i-square-code', hint: '```', keys: 'code block snippet', group: 'Basic blocks' },
+  { cmd: 'hr', label: 'Divider', icon: 'i-minus', hint: '---', keys: 'divider line separator hr rule', group: 'Basic blocks' },
+  { cmd: 'mention', label: 'File or folder', icon: 'i-at-sign', hint: '@', keys: 'file folder mention reference', group: 'Reference' },
+  { cmd: 'image', label: 'Image', icon: 'i-image-plus', keys: 'image picture screenshot photo img', group: 'Reference' },
+];
+function slashItems(query) {
+  const q = query.toLowerCase().trim();
+  if (!q) return SLASH_ITEMS;
+  return SLASH_ITEMS
+    .map((it) => {
+      const label = it.label.toLowerCase();
+      const score = label.startsWith(q) ? 3 : it.keys.split(' ').some((k) => k.startsWith(q)) ? 2 : label.includes(q) ? 1 : 0;
+      return { it, score };
+    })
+    .filter((x) => x.score)
+    .sort((a, b) => b.score - a.score)
+    .map((x) => x.it);
+}
+
+const slashMenu = (() => {
+  const box = $('#slash'), list = $('#slashList');
+  let props = null, items = [], sel = 0;
+  function render() {
+    if (!items.length) list.innerHTML = '<div class="empty">No matching command</div>';
+    else {
+      let html = '', lastGroup = null;
+      items.forEach((it, i) => {
+        if (!props.query && it.group !== lastGroup) { html += `<div class="tt-label">${it.group}</div>`; lastGroup = it.group; }
+        html += `<button class="${i === sel ? 'sel' : ''}" data-i="${i}" role="option"><span class="ic ${it.icon}"></span><span class="lbl">${it.label}</span>${it.hint ? `<kbd>${esc(it.hint)}</kbd>` : ''}</button>`;
+      });
+      list.innerHTML = html;
+      list.querySelector('.sel')?.scrollIntoView({ block: 'nearest' });
+    }
+    const r = props?.clientRect?.();
+    if (!r) return;
+    const h = box.offsetHeight, w = box.offsetWidth;
+    box.style.top = (r.bottom + 6 + h <= window.innerHeight - 26 ? r.bottom + 6 : Math.max(8, r.top - h - 6)) + 'px';
+    box.style.left = Math.min(Math.max(8, r.left - 6), window.innerWidth - w - 8) + 'px';
+  }
+  list.addEventListener('mousedown', (e) => {
+    const b = e.target.closest('[data-i]');
+    if (!b) return;
+    e.preventDefault();
+    props.command(items[+b.dataset.i]);
+  });
+  return {
+    onStart(p) { props = p; items = p.items || []; sel = 0; box.classList.add('show'); hideHover(); render(); },
+    onUpdate(p) { if (p.query !== props?.query) sel = 0; props = p; items = p.items || []; sel = Math.min(sel, Math.max(0, items.length - 1)); render(); },
+    onKeyDown({ event }) {
+      if (event.key === 'Escape') { box.classList.remove('show'); return true; }
+      if (!items.length) return false;
+      if (event.key === 'ArrowDown') { sel = (sel + 1) % items.length; render(); return true; }
+      if (event.key === 'ArrowUp') { sel = (sel - 1 + items.length) % items.length; render(); return true; }
+      if (event.key === 'Enter' || event.key === 'Tab') { props.command(items[sel]); return true; }
+      return false;
+    },
+    onExit() { box.classList.remove('show'); props = null; items = []; },
+  };
+})();
+
+const SlashCommands = Extension.create({
+  name: 'slashCommands',
+  addProseMirrorPlugins() {
+    return [Suggestion({
+      editor: this.editor,
+      char: '/',
+      pluginKey: new PluginKey('slashCommands'),
+      allow: ({ state }) => !state.selection.$from.parent.type.spec.code,
+      items: ({ query }) => slashItems(query),
+      render: () => slashMenu,
+      // remove the typed "/query", then run the chosen command on the now-empty spot
+      command: ({ editor: ed, range, props: item }) => { ed.chain().focus().deleteRange(range).run(); run(item.cmd); },
+    })];
+  },
+});
+
+/* ------------------------------------------------------------------
+ * Sample content
+ * ------------------------------------------------------------------ */
+const shot = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="720" height="330" viewBox="0 0 720 330">
+<rect width="720" height="330" fill="#f3f4f6"/><rect width="720" height="34" fill="#e5e7eb"/>
+<circle cx="20" cy="17" r="6" fill="#f87171"/><circle cx="40" cy="17" r="6" fill="#fbbf24"/><circle cx="60" cy="17" r="6" fill="#34d399"/>
+<rect x="90" y="8" width="420" height="18" rx="9" fill="#fff"/><text x="104" y="21" font-family="Segoe UI,Arial" font-size="11" fill="#6b7280">localhost:5173/dashboard</text>
+<rect x="210" y="70" width="300" height="220" rx="10" fill="#fff" stroke="#d1d5db"/>
+<text x="360" y="108" text-anchor="middle" font-family="Segoe UI,Arial" font-size="18" font-weight="600" fill="#111827">Sign in</text>
+<rect x="236" y="126" width="248" height="40" rx="6" fill="#fef2f2" stroke="#fca5a5"/>
+<text x="250" y="151" font-family="Segoe UI,Arial" font-size="12" fill="#b91c1c">Session expired. Please sign in again.</text>
+<rect x="236" y="180" width="248" height="28" rx="5" fill="#f9fafb" stroke="#d1d5db"/><text x="246" y="198" font-family="Segoe UI,Arial" font-size="11" fill="#9ca3af">you@example.com</text>
+<rect x="236" y="216" width="248" height="28" rx="5" fill="#f9fafb" stroke="#d1d5db"/><text x="246" y="234" font-family="Segoe UI,Arial" font-size="11" fill="#9ca3af">••••••••</text>
+<rect x="236" y="254" width="248" height="26" rx="5" fill="#2563eb"/><text x="360" y="271" text-anchor="middle" font-family="Segoe UI,Arial" font-size="12" fill="#fff">Continue</text>
+<text x="560" y="150" font-family="Segoe UI,Arial" font-size="11" fill="#6b7280">user was active</text><text x="560" y="166" font-family="Segoe UI,Arial" font-size="11" fill="#6b7280">10 seconds ago</text>
+</svg>`);
+const LOGIN_IMG = `${STORE}/images/login-bug.png`;
+IMAGES[LOGIN_IMG] = shot;
+
+const m = (p) => `<span data-type="mention" data-id="${p}"></span>`;
+const INITIAL = `
+<h1>Refactor auth token refresh</h1>
+<p>Move the token refresh logic out of ${m('src/server/auth.ts')} into ${m('src/server/token.ts')} and expose it to the client through ${m('src/client/hooks/useSession.ts')}.</p>
+<p>Reuse the date helpers in ${m('shared/utils/date.ts')} instead of writing new ones. Follow the conventions in ${m('CLAUDE.md')}.</p>
+<h2>Constraints</h2>
+<ul>
+<li><p>Don't change the public API exported from ${m('src/server/index.ts')}</p></li>
+<li><p>Keep all env handling inside ${m('src/config/')}</p></li>
+<li><p>Ignore ${m('src/server/legacy-session.ts')}, it was deleted last sprint</p></li>
+<li><p>No new dependencies; call it as <code>refreshToken(session, { leewaySeconds: 60 })</code></p></li>
+</ul>
+<h2>Bug</h2>
+<p>The session expires while the user is still active (see <a href="https://example.com/issues/482">issue 482</a>):</p>
+<img src="${shot}" alt="Session expired while active" data-path="${relFromPrompt(LOGIN_IMG)}">
+<p>Current behaviour, refresh only happens after a 401:</p>
+<pre><code class="language-ts">// src/server/auth.ts
+export async function send(req: Request): Promise&lt;Response&gt; {
+  const res = await fetch(req)
+  if (res.status === 401) {
+    await refresh("session")
+    return retry(req, { attempts: 1 })
+  }
+  return res
+}</code></pre>
+<h2>How to test</h2>
+<pre><code class="language-bash"># run only the auth tests, in watch mode
+npm test -- --grep "token refresh" --watch</code></pre>
+<h2>Done when</h2>
+<ul data-type="taskList">
+<li data-type="taskItem" data-checked="true"><p>Refresh happens 60s before expiry</p></li>
+<li data-type="taskItem" data-checked="false"><p>Tests cover the retry path</p></li>
+<li data-type="taskItem" data-checked="false"><p>Nothing changes under ${m('shared/')}</p></li>
+</ul>`;
+
+/* ------------------------------------------------------------------
+ * Prompt library (sample). Dates are relative to today so Today / Yesterday
+ * always show. In the extension this is read from .prompt-composer/prompts.
+ * ------------------------------------------------------------------ */
+const ago = (days, hh, mm) => { const d = new Date(); d.setDate(d.getDate() - days); d.setHours(hh, mm, 0, 0); return d; };
+const sample = (days, hh, mm, html, pinned = false) => ({ id: `p${days}-${hh}${mm}`, created: ago(days, hh, mm), html, pinned });
+PROMPTS = [
+  sample(0, 14, 15, INITIAL, true),
+  sample(0, 9, 2, `<h1>Add rate limit to /login</h1><p>Add a per-IP limit to the login route in ${m('src/server/routes.ts')} using ${m('src/server/middleware/rateLimit.ts')}.</p><ul><li><p>5 attempts per minute per IP</p></li><li><p>Return 429 with a Retry-After header</p></li></ul>`),
+  sample(1, 18, 40, `<h1>Fix flaky session test</h1><p>The session expiry test in ${m('src/server/middleware/session.ts')} fails about 1 in 10 runs. It depends on the real clock; use fake timers instead.</p>`),
+  sample(2, 11, 20, `<h1>Explain the config loading order</h1><p>Walk me through how ${m('src/config/env.ts')} and ${m('src/config/flags.ts')} are loaded at startup, and which one wins when both set the same key.</p>`),
+  sample(4, 16, 5, `<h1>Write migration for user roles</h1><p>Add a roles table and backfill every existing user as "member". Keep it reversible.</p>`),
+  sample(9, 10, 12, `<h1>Review CLAUDE.md conventions</h1><p>Read ${m('CLAUDE.md')} and list anything outdated compared to how ${m('src/server/')} is written today.</p>`),
+  sample(9, 9, 30, `<h1>Speed up dashboard first paint</h1><p>${m('src/client/App.tsx')} renders the whole dashboard before data arrives. Show a skeleton first and load charts lazily.</p>`),
+  sample(22, 14, 50, `<h1>Add dark mode toggle</h1><p>Add a toggle in settings that follows the system theme by default and remembers the choice.</p>`),
+  sample(37, 13, 15, `<h1>Set up Playwright smoke tests</h1><p>Three smoke tests: sign in, open dashboard, sign out. Run them in CI on every pull request.</p>`),
+  sample(59, 8, 45, `<h1>Split routes.ts by feature</h1><p>${m('src/server/routes.ts')} is 900 lines. Split it into auth, users and billing route files without changing any URLs.</p>`),
+];
+// Title = first heading or first line; search text = everything, with mentions as @path.
+function refreshMeta(p) {
+  const t = document.createElement('template');
+  t.innerHTML = p.html || '';
+  t.content.querySelectorAll('[data-type="mention"]').forEach((s) => { s.textContent = '@' + s.dataset.id; });
+  t.content.querySelectorAll('p, h1, h2, h3, li, pre').forEach((el) => el.append('\n'));
+  p.text = t.content.textContent.replace(/[ \t]+/g, ' ').trim();
+  p.title = (p.text.split('\n').map((s) => s.trim()).find(Boolean) || '').slice(0, 80);
+}
+PROMPTS.forEach((p) => { refreshMeta(p); p.slug = slugify(p.title); });
+let current = PROMPTS[0];
+buildWorkspace();
+
+/* ------------------------------------------------------------------
+ * Markdown serializer: what the extension writes back to the TextDocument.
+ * Mentions → @workspace/relative/path ; images → path relative to the .md
+ * ------------------------------------------------------------------ */
+function inlineMd(nodes = []) {
+  return nodes.map((n) => {
+    if (n.type === 'mention') return '@' + n.attrs.id;
+    if (n.type === 'hardBreak') return '\\\n';
+    if (n.type !== 'text') return '';
+    let t = n.text;
+    const marks = n.marks || [];
+    const has = (k) => marks.some((x) => x.type === k);
+    if (has('code')) t = '`' + t + '`';
+    if (has('bold')) t = `**${t}**`;
+    if (has('italic')) t = `*${t}*`;
+    if (has('strike')) t = `~~${t}~~`;
+    const link = marks.find((x) => x.type === 'link');
+    if (link) t = `[${t}](${link.attrs.href})`;
+    return t;
+  }).join('');
+}
+function listMd(n, ind, marker) {
+  return (n.content || []).map((item, i) => {
+    const mk = marker(i, item);
+    const [first, ...rest] = item.content || [];
+    let s = ind + mk + (first ? blockMd(first, '') : '');
+    for (const child of rest) s += '\n' + blockMd(child, ind + ' '.repeat(mk.length));
+    return s;
+  }).join('\n');
+}
+function blockMd(n, ind) {
+  switch (n.type) {
+    case 'paragraph': return ind + inlineMd(n.content);
+    case 'heading': return ind + '#'.repeat(n.attrs.level) + ' ' + inlineMd(n.content);
+    case 'blockquote': return (n.content || []).map((c) => blockMd(c, '')).join('\n\n').split('\n').map((l) => ind + (l ? '> ' + l : '>')).join('\n');
+    case 'codeBlock': {
+      const code = (n.content || []).map((t) => t.text).join('');
+      return [ind + '```' + (n.attrs.language || ''), ...code.split('\n').map((l) => ind + l), ind + '```'].join('\n');
+    }
+    case 'horizontalRule': return ind + '---';
+    case 'image': return ind + `![${n.attrs.alt || ''}](${n.attrs.path || '(unsaved image)'})`;
+    case 'bulletList': return listMd(n, ind, () => '- ');
+    case 'orderedList': return listMd(n, ind, (i) => `${(n.attrs.start || 1) + i}. `);
+    case 'taskList': return listMd(n, ind, (i, item) => `- [${item.attrs.checked ? 'x' : ' '}] `);
+    default: return '';
+  }
+}
+// Blocks are separated by one blank line. Every empty line the user adds becomes one more blank
+// line in the file, so any number of them survive a save and reload (reading the file back turns
+// N blank lines into N-1 empty lines). Only empty lines at the very end of the document are dropped.
+function toMarkdown() {
+  const doc = editor.state.doc;
+  const isEmpty = (n) => n.type.name === 'paragraph' && n.content.size === 0;
+  let last = -1;
+  doc.forEach((n, _, i) => { if (!isEmpty(n)) last = i; });
+  let out = '', blanks = 0, wrote = false;
+  doc.forEach((node, _, i) => {
+    if (i > last) return;                         // trailing empty lines: not saved
+    if (isEmpty(node)) { blanks++; return; }
+    out += (wrote ? '\n\n' : '') + '\n'.repeat(blanks) + blockMd(node.toJSON(), '');
+    blanks = 0;
+    wrote = true;
+  });
+  return out + '\n';
+}
+
+/* ------------------------------------------------------------------
+ * Editor
+ * ------------------------------------------------------------------ */
+$('#editor').innerHTML = '';
+const editor = new Editor({
+  element: $('#editor'),
+  extensions: [
+    StarterKit.configure({ heading: { levels: [1, 2, 3] }, link: { openOnClick: false, autolink: true }, underline: false, codeBlock: false }),
+    CodeBlock,
+    MoveBlocks,
+    TaskList,
+    TaskItem.configure({ nested: true }),
+    PathImage,
+    FileMention,
+    Placeholder.configure({ placeholder: 'Write your prompt… Type / for commands, @ to mention a file' }),
+    BubbleMenu.configure({
+      element: $('#bubble'),
+      options: { placement: 'top', offset: 8, scrollTarget: $('#scroller') },
+      shouldShow: ({ editor: ed, state, from, to }) => {
+        if (!ed.isFocused && !$('#bubble').contains(document.activeElement)) return false;
+        if (state.selection.empty || state.selection.toJSON().type !== 'text') return false;
+        if (ed.isActive('codeBlock') || !state.doc.textBetween(from, to).trim()) return false;
+        return true;
+      },
+    }),
+    SlashCommands,
+  ],
+  content: INITIAL,
+  editorProps: {
+    attributes: { spellcheck: 'false' },
+    handlePaste: (view, event) => {
+      const files = [...(event.clipboardData?.files || [])].filter((f) => f.type.startsWith('image/'));
+      if (!files.length) return false;
+      addImages(files, null, 'pasted');
+      return true;
+    },
+    // ProseMirror selects the whole block on Ctrl/Cmd+click (drawing a box around it). In VS Code that
+    // gesture means "follow", so claim it: links and chips are handled by the click listener below.
+    handleClick: (view, pos, event) => event.ctrlKey || event.metaKey,
+    handleDrop: (view, event) => {
+      hideDropHint();
+      const dt = event.dataTransfer;
+      const path = dt?.getData('application/x-pc-path');
+      const at = view.posAtCoords({ left: event.clientX, top: event.clientY })?.pos ?? null;
+      if (path) {
+        if (!event.shiftKey) {
+          toast('VS Code would open the file instead', 'Hold Shift while dropping to insert it as a mention.', 'warning');
+          return true;
+        }
+        editor.chain().focus().insertContentAt(at ?? editor.state.selection.to, [{ type: 'mention', attrs: { id: path, label: path } }, { type: 'text', text: ' ' }]).run();
+        return true;
+      }
+      const files = [...(dt?.files || [])].filter((f) => f.type.startsWith('image/'));
+      if (!files.length) return false;
+      addImages(files, at, 'dropped');
+      return true;
+    },
+  },
+  onUpdate: () => { setDirty(true); refreshDerived(); updateToolbar(); scheduleSave(); },
+  onSelectionUpdate: () => updateToolbar(),
+});
+window.editor = editor;
+
+/* ------------------------------------------------------------------
+ * Derived views: raw file, status bar
+ * ------------------------------------------------------------------ */
+let lastRaw = '';
+function renderRaw(md) {
+  const prevLines = new Set(lastRaw.split('\n'));
+  let inFence = false;
+  $('#raw').innerHTML = md.split('\n').map((line, i) => {
+    let h = esc(line);
+    if (/^\s*```/.test(line)) { inFence = !inFence; h = `<span class="fence">${h}</span>`; }
+    else if (inFence) h = `<span class="fence">${h}</span>`;
+    else if (/^#{1,6} /.test(line)) h = `<span class="h">${h}</span>`;
+    else {
+      h = h.replace(/^(\s*)(- \[[ x]\]|[-*] |\d+\. )/, '$1<span class="mk">$2</span>');
+      h = h.replace(/^(&gt;.*)$/, '<span class="q">$1</span>');
+      h = h.replace(/!\[[^\]]*\]\([^)]*\)/g, (s) => `<span class="img">${s}</span>`);
+      h = h.replace(/(^|[\s(])(@[^\s,;)]+)/g, '$1<span class="m">$2</span>');
+    }
+    const changed = lastRaw && line.trim() && !prevLines.has(line) ? ' changed' : '';
+    return `<div class="ln${changed}"><span class="num">${i + 1}</span><span class="txt">${h || ' '}</span></div>`;
+  }).join('');
+  lastRaw = md;
+}
+
+function refreshDerived() {
+  const md = toMarkdown();
+  renderRaw(md);
+  let mentions = 0, broken = 0, images = 0;
+  editor.state.doc.descendants((n) => {
+    if (n.type.name === 'mention') { mentions++; if (mentionInfo(n.attrs.id).broken) broken++; }
+    if (n.type.name === 'image') images++;
+  });
+  $('#sbMentions').innerHTML = `<i class="codicon codicon-mention"></i>${mentions}` + (broken ? ` <span class="warn"><i class="codicon codicon-warning"></i>${broken} broken</span>` : '');
+  $('#sbImages').innerHTML = `<i class="codicon codicon-file-media"></i>${images}`;
+  const words = editor.getText().trim().split(/\s+/).filter(Boolean).length;
+  const tokens = Math.round(md.length / 4);
+  $('#sbSize').textContent = `${words} words · ~${tokens >= 1000 ? (tokens / 1000).toFixed(1) + 'k' : tokens} tokens`;
+}
+
+function setDirty(d) {
+  $('#composerTab').classList.toggle('dirty', d);
+  document.querySelector('#libTree .lrow.prompt.active')?.classList.toggle('dirty', d);   // unsaved dot in the panel too
+}
+
+$('#sbMentions').addEventListener('click', () => {
+  let target = null;
+  editor.state.doc.descendants((n, pos) => { if (target == null && n.type.name === 'mention' && mentionInfo(n.attrs.id).broken) target = pos; });
+  if (target == null) return toast('No broken mentions', 'Every @path resolves to a file or folder in the workspace.');
+  editor.chain().focus().setNodeSelection(target).scrollIntoView().run();
+});
+
+/* ------------------------------------------------------------------
+ * Hover card for mentions and images (full path only appears here, on demand)
+ * ------------------------------------------------------------------ */
+let hoverTimer = null;
+const hoverEl = $('#hover');
+function hideHover() { clearTimeout(hoverTimer); hoverEl.classList.remove('show'); }
+function showHoverFor(el) {
+  let html = '';
+  if (el.classList.contains('mention')) {
+    const id = el.dataset.path;
+    const info = mentionInfo(id);
+    const e = info.e;
+    html += `<div class="hc-title"><span class="ic ${info.icon}"></span>${esc(info.label)}</div><div class="hc-path">${esc(id)}</div>`;
+    if (info.broken) html += `<div class="hc-sub warn"><span class="ic i-triangle-alert"></span>Not found in workspace. Moved or deleted?</div>`;
+    if (e?.link) html += `<div class="hc-sub"><span class="ic i-link-2"></span>Symlink to ${esc(e.link)}</div>`;
+    else if (e?.via) html += `<div class="hc-sub"><span class="ic i-link-2"></span>Inside symlinked ${esc(e.via.name)} → ${esc(e.via.link)}</div>`;
+    if (e && isImage(e.name)) {
+      const src = IMAGES[e.path];
+      if (src) html += `<img class="thumb" src="${src}" alt="">`;
+    }
+    html += `<div class="hc-foot">${info.broken ? 'Backspace to remove' : info.isDir ? 'Ctrl+click to reveal in Explorer' : 'Ctrl+click to open'}</div>`;
+  } else if (el.tagName === 'A') {
+    const href = el.getAttribute('href') || '';
+    html += `<div class="hc-title"><span class="ic i-link"></span>${esc(el.textContent)}</div><div class="hc-path">${esc(href)}</div><div class="hc-foot">Follow link (Ctrl + click)</div>`;
+  } else {
+    const p = el.dataset.path || '';
+    html += `<div class="hc-title"><span class="ic i-file-image"></span>${esc(p.split('/').pop())}</div><div class="hc-path">${esc(wsFromRel(p))}</div><div class="hc-foot">Double-click to open full size</div>`;
+  }
+  hoverEl.innerHTML = html;
+  hoverEl.classList.add('show');
+  const r = el.getBoundingClientRect();
+  const h = hoverEl.offsetHeight, w = hoverEl.offsetWidth;
+  let top = r.top - h - 8;
+  if (top < 70) top = r.bottom + 8;
+  hoverEl.style.top = top + 'px';
+  hoverEl.style.left = Math.min(Math.max(8, r.left), window.innerWidth - w - 8) + 'px';
+}
+const editorRoot = $('#editor');
+const HOVERABLE = '.mention, img[data-path], a[href]';
+editorRoot.addEventListener('mouseover', (ev) => {
+  const el = ev.target.closest(HOVERABLE);
+  if (!el || $('#picker').classList.contains('show')) return;
+  clearTimeout(hoverTimer);
+  hoverTimer = setTimeout(() => showHoverFor(el), 350);
+});
+editorRoot.addEventListener('mouseout', (ev) => { if (ev.target.closest(HOVERABLE)) hideHover(); });
+
+// Ctrl/Cmd+click follows: web links open in the browser (vscode.env.openExternal in the extension),
+// links to workspace files open in a VS Code tab, chips open their file or reveal their folder.
+function followLink(href) {
+  if (/^(https?:|mailto:)/i.test(href)) return toast('Opening link in your browser', href);
+  const entry = BY_PATH.get(href.replace(/^\.\//, '').replace(/\/$/, ''));
+  if (entry) revealInTree(entry.path);
+  toast(entry ? 'Opened in editor' : 'File not found', entry ? `${href} opens in a normal VS Code tab` : href, entry ? 'info' : 'warning');
+}
+editorRoot.addEventListener('click', (ev) => {
+  if (!(ev.ctrlKey || ev.metaKey)) return;
+  const link = ev.target.closest('a[href]');
+  if (link) { ev.preventDefault(); hideHover(); return followLink(link.getAttribute('href')); }
+  const el = ev.target.closest('.mention');
+  if (!el) return;
+  const info = mentionInfo(el.dataset.path);
+  if (info.broken) return toast('File not found', el.dataset.path, 'warning');
+  revealInTree(info.e.path);
+  toast(info.isDir ? 'Revealed in Explorer' : 'Opened in editor', info.isDir ? info.e.path + '/' : `${info.e.path} opens in a normal VS Code tab`);
+});
+editorRoot.addEventListener('dblclick', (ev) => {
+  const img = ev.target.closest('img[data-path]');
+  if (img) toast('Opened image', `${wsFromRel(img.dataset.path)} in VS Code's image preview`);
+});
+window.addEventListener('keydown', (e) => { if (e.key === 'Control' || e.key === 'Meta') document.body.classList.add('ctrl'); });
+window.addEventListener('keyup', (e) => { if (e.key === 'Control' || e.key === 'Meta') document.body.classList.remove('ctrl'); });
+window.addEventListener('blur', () => document.body.classList.remove('ctrl'));
+$('#scroller').addEventListener('scroll', () => { hideHover(); closeMenus(); });
+
+/* ------------------------------------------------------------------
+ * Images: paste / drop / picker
+ * ------------------------------------------------------------------ */
+// Images go to the one flat .prompt-composer/images/ folder. Pasted ones are named YYYY-MM-DD-HHmmss (the date
+// is in the name because the folder is flat); dropped files keep their name. Nothing is ever overwritten (-1, -2…).
+function imagePath(base, ext) {
+  const dir = `${STORE}/images`;
+  let p = `${dir}/${base}.${ext}`, i = 1;
+  while (IMAGES[p]) p = `${dir}/${base}-${i++}.${ext}`;
+  return p;
+}
+function addImages(files, at, how) {
+  files.forEach((file) => {
+    const ext = (file.type.split('/')[1] || 'png').replace('jpeg', 'jpg').replace('svg+xml', 'svg');
+    const d = new Date();
+    const base = how === 'pasted' || !file.name ? `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}` : file.name.replace(/\.[^.]+$/, '').replace(/[^\w.-]+/g, '-');
+    const ws = imagePath(base, ext);
+    const reader = new FileReader();
+    reader.onload = () => {
+      IMAGES[ws] = reader.result;
+      buildWorkspace();
+      renderTree();
+      const node = { type: 'image', attrs: { src: reader.result, alt: base, path: relFromPrompt(ws) } };
+      const chain = editor.chain().focus();
+      (at != null ? chain.insertContentAt(at, node) : chain.insertContent(node)).run();
+      toast(`Image ${how}`, `Saved to ${ws}`);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+$('#filePicker').addEventListener('change', (e) => { addImages([...e.target.files], null, 'added'); e.target.value = ''; });
+
+/* drag hint over the webview (VS Code needs Shift to drop into a webview) */
+function hideDropHint() { $('#dropHint').classList.remove('show', 'blocked'); }
+webview.addEventListener('dragover', (e) => {
+  const types = [...e.dataTransfer.types];
+  const fromTree = types.includes('application/x-pc-path');
+  if (!fromTree && !types.includes('Files')) return;
+  const hint = $('#dropHint');
+  hint.classList.add('show');
+  hint.classList.toggle('blocked', fromTree && !e.shiftKey);
+  $('#dropHintText').textContent = fromTree
+    ? (e.shiftKey ? 'Drop to insert @mention' : 'Hold Shift to drop into the editor')
+    : 'Drop image to save it in ' + STORE + '/images/';
+});
+webview.addEventListener('dragleave', (e) => { if (!webview.contains(e.relatedTarget)) hideDropHint(); });
+window.addEventListener('drop', hideDropHint);
+window.addEventListener('dragend', hideDropHint);
+
+/* ------------------------------------------------------------------
+ * Formatting commands: toolbar, toolbar dropdowns, bubble menu, "/" menu
+ * ------------------------------------------------------------------ */
+function run(cmd) {
+  const c = editor.chain().focus();
+  switch (cmd) {
+    case 'bold': return c.toggleBold().run();
+    case 'italic': return c.toggleItalic().run();
+    case 'strike': return c.toggleStrike().run();
+    case 'code': return c.toggleCode().run();
+    case 'paragraph': return c.setParagraph().run();
+    case 'h1': return c.toggleHeading({ level: 1 }).run();
+    case 'h2': return c.toggleHeading({ level: 2 }).run();
+    case 'h3': return c.toggleHeading({ level: 3 }).run();
+    case 'bulletList': return c.toggleBulletList().run();
+    case 'orderedList': return c.toggleOrderedList().run();
+    case 'taskList': return c.toggleTaskList().run();
+    case 'blockquote': return c.toggleBlockquote().run();
+    case 'codeBlock': return c.toggleCodeBlock().run();
+    case 'hr': return c.setHorizontalRule().run();
+    case 'clear': return c.unsetAllMarks().clearNodes().run();
+    case 'mention': {
+      const { $from } = editor.state.selection;
+      const needsSpace = $from.parentOffset > 0 && !/\s$/.test($from.parent.textBetween(0, $from.parentOffset));
+      return c.insertContent(needsSpace ? ' @' : '@').run();
+    }
+    case 'image': return $('#filePicker').click();
+    case 'link': return askLink();
+  }
+}
+const isOn = {
+  bold: () => editor.isActive('bold'), italic: () => editor.isActive('italic'), strike: () => editor.isActive('strike'),
+  code: () => editor.isActive('code'), link: () => editor.isActive('link'),
+  blockquote: () => editor.isActive('blockquote'), codeBlock: () => editor.isActive('codeBlock'),
+  bulletList: () => editor.isActive('bulletList'), orderedList: () => editor.isActive('orderedList'), taskList: () => editor.isActive('taskList'),
+  h1: () => editor.isActive('heading', { level: 1 }), h2: () => editor.isActive('heading', { level: 2 }), h3: () => editor.isActive('heading', { level: 3 }),
+  paragraph: () => editor.isActive('paragraph') && !editor.isActive('bulletList') && !editor.isActive('orderedList') && !editor.isActive('taskList'),
+};
+function updateToolbar() {
+  document.querySelectorAll('#toolbar [data-cmd], #bubble [data-cmd], .tt-menu [data-cmd]').forEach((b) => {
+    b.classList.toggle('on', !!isOn[b.dataset.cmd]?.());
+  });
+  // dropdown buttons show the active block type, like Tiptap's Simple Editor
+  const level = [1, 2, 3].find((l) => editor.isActive('heading', { level: l }));
+  const hBtn = $('#toolbar [data-dd="heading"]');
+  hBtn.querySelector('[data-icon]').className = `ic ${level ? 'i-heading-' + level : 'i-heading'}`;
+  hBtn.classList.toggle('on', !!level);
+  const list = ['taskList', 'orderedList', 'bulletList'].find((t) => editor.isActive(t));
+  const lBtn = $('#toolbar [data-dd="list"]');
+  lBtn.querySelector('[data-icon]').className = `ic ${{ taskList: 'i-list-todo', orderedList: 'i-list-ordered' }[list] || 'i-list'}`;
+  lBtn.classList.toggle('on', !!list);
+}
+
+// When the toolbar wraps, hide separators that would dangle at a line break.
+function tidySeparators() {
+  const seps = [...document.querySelectorAll('#toolbar .tt-sep')];
+  seps.forEach((s) => { s.style.display = ''; });
+  seps.forEach((s) => {
+    const prev = s.previousElementSibling, next = s.nextElementSibling;
+    if (prev && next && prev.offsetTop !== next.offsetTop) s.style.display = 'none';
+  });
+}
+new ResizeObserver(tidySeparators).observe($('#toolbar'));
+
+function closeMenus() {
+  document.querySelectorAll('.tt-menu.show').forEach((m) => m.classList.remove('show'));
+  $('#dragHandle').classList.remove('open');
+}
+$('#toolbar').addEventListener('click', (e) => {
+  const dd = e.target.closest('[data-dd]');
+  if (dd) {
+    const menu = document.querySelector(`.tt-menu[data-menu="${dd.dataset.dd}"]`);
+    const open = menu.classList.contains('show');
+    closeMenus();
+    if (!open) {
+      const r = dd.getBoundingClientRect();
+      menu.style.top = r.bottom + 6 + 'px';
+      menu.style.left = r.left + 'px';
+      menu.classList.add('show');
+      updateToolbar();
+    }
+    return;
+  }
+  const b = e.target.closest('[data-cmd]');
+  if (b) { closeMenus(); run(b.dataset.cmd); updateToolbar(); }
+});
+document.querySelectorAll('.tt-menu').forEach((menu) => menu.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-cmd]');
+  if (b) { closeMenus(); run(b.dataset.cmd); updateToolbar(); }
+}));
+document.addEventListener('mousedown', (e) => { if (!e.target.closest('.tt-menu, [data-dd], .cb-lang, .drag-handle')) closeMenus(); });
+document.querySelectorAll('#toolbar, .tt-menu, #bubble').forEach((bar) => bar.addEventListener('mousedown', (e) => e.preventDefault()));
+$('#bubble').addEventListener('click', (e) => { const b = e.target.closest('[data-cmd]'); if (b) { run(b.dataset.cmd); updateToolbar(); } });
+
+/* drag handle: follows the block under the mouse; drag it to move the block, click it for a menu */
+const handle = $('#dragHandle');
+const composer = $('#composer');
+let handlePos = null, blockMenuPos = null;
+function hideHandle() { if (!handle.classList.contains('open')) handle.classList.remove('show'); }
+function placeHandle(pos) {
+  const dom = editor.view.nodeDOM(pos);
+  const node = editor.state.doc.nodeAt(pos);
+  if (!(dom instanceof HTMLElement) || !node) return hideHandle();
+  if (node.type.name === 'paragraph' && node.content.size === 0) return hideHandle(); // nothing to move on an empty line
+  const c = composer.getBoundingClientRect(), r = dom.getBoundingClientRect();
+  const lineHeight = parseFloat(getComputedStyle(dom).lineHeight) || 24;
+  let top = r.top - c.top + Math.max(0, (Math.min(lineHeight, r.height) - 24) / 2);
+  if (node.type.name === 'codeBlock') top = r.top - c.top + 6;
+  let left = editor.view.dom.getBoundingClientRect().left - c.left - 28;
+  if (node.type.name === 'listItem') left = r.left - c.left - 44;   // left of the bullet / number
+  if (node.type.name === 'taskItem') left = r.left - c.left - 26;   // left of the checkbox
+  handle.style.top = top + 'px';
+  handle.style.left = left + 'px';
+  handle.classList.add('show');
+  handlePos = pos;
+}
+composer.addEventListener('mousemove', (e) => {
+  if (handle.classList.contains('open') || e.buttons || e.target.closest('#dragHandle')) return;
+  const view = editor.view, r = view.dom.getBoundingClientRect();
+  const hit = view.posAtCoords({ left: Math.min(Math.max(e.clientX, r.left + 30), r.right - 10), top: e.clientY });
+  if (!hit) return hideHandle();
+  let pos = null;
+  if (hit.inside >= 0) {
+    const n = view.state.doc.nodeAt(hit.inside);
+    if (n && n.isBlock && n.isAtom && view.state.doc.resolve(hit.inside).depth === 0) pos = hit.inside; // image, divider
+  }
+  if (pos == null) pos = blockAt(view.state.doc.resolve(hit.pos));
+  if (pos == null) return hideHandle();
+  placeHandle(pos);
+});
+composer.addEventListener('mouseleave', hideHandle);
+editor.view.dom.addEventListener('keydown', () => hideHandle());
+
+// Dragging uses ProseMirror's own block drag: select the block, hand PM the slice, PM moves it on drop.
+handle.addEventListener('dragstart', (e) => {
+  if (handlePos == null) return e.preventDefault();
+  const view = editor.view;
+  const sel = NodeSelection.create(view.state.doc, handlePos);
+  view.dispatch(view.state.tr.setSelection(sel));
+  view.dragging = { slice: sel.content(), move: true };
+  e.dataTransfer.effectAllowed = 'copyMove';
+  e.dataTransfer.setData('text/plain', sel.node.textContent);
+  const dom = view.nodeDOM(handlePos);
+  if (dom instanceof HTMLElement) e.dataTransfer.setDragImage(dom, 0, 0);
+  closeMenus();
+});
+handle.addEventListener('dragend', () => handle.classList.remove('show'));
+
+handle.addEventListener('click', () => {
+  if (handlePos == null) return;
+  const menu = $('#menu-block');
+  const wasOpen = menu.classList.contains('show');
+  closeMenus();
+  if (wasOpen) return;
+  blockMenuPos = handlePos;
+  const r = handle.getBoundingClientRect();
+  menu.classList.add('show');
+  handle.classList.add('open');
+  const h = menu.offsetHeight;
+  menu.style.top = (r.bottom + 4 + h <= window.innerHeight - 8 ? r.bottom + 4 : Math.max(8, r.top - h - 4)) + 'px';
+  menu.style.left = r.left + 'px';
+});
+$('#menu-block').addEventListener('mousedown', (e) => e.preventDefault());
+$('#menu-block').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-bcmd]');
+  const pos = blockMenuPos;
+  const node = pos != null && editor.state.doc.nodeAt(pos);
+  if (!b || !node) return;
+  closeMenus();
+  const cmd = b.dataset.bcmd;
+  let tr = null, keep = null;
+  if (cmd === 'up' || cmd === 'down') {
+    const m = moveTr(pos, cmd === 'up' ? -1 : 1);
+    if (m) { tr = m.tr; keep = m.target; }
+  } else if (cmd === 'duplicate') {
+    tr = editor.state.tr.insert(pos + node.nodeSize, node);
+    keep = pos + node.nodeSize;
+  } else if (cmd === 'delete') {
+    tr = editor.state.tr.delete(pos, pos + node.nodeSize);
+  }
+  if (!tr) return;
+  if (keep != null) tr.setSelection(NodeSelection.create(tr.doc, keep));
+  editor.view.dispatch(tr.scrollIntoView());
+  editor.commands.focus();
+  if (keep != null) placeHandle(keep); else handle.classList.remove('show');
+});
+
+/* smooth caret: a drawn caret that follows the selection head (see .pc-caret in the CSS).
+   In the extension, glide/blink/width/colour come from the user's VS Code editor.cursor* settings. */
+const caret = document.createElement('div');
+caret.className = 'pc-caret';
+caret.innerHTML = '<span class="pc-caret-bar"></span>';
+composer.appendChild(caret);
+let caretShown = false, caretBlinkTimer = null, caretFrame = null;
+function placeCaret(glide = true) {
+  caretFrame = null;
+  const sel = editor.state.selection;
+  const on = document.body.classList.contains('smooth-caret') && editor.isFocused && sel instanceof TextSelection;
+  if (!on) { caret.classList.remove('show', 'blink'); caretShown = false; return; }
+  let c;
+  try { c = editor.view.coordsAtPos(sel.head); } catch { return; }
+  const base = composer.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  const x = Math.round((c.left - base.left) * dpr) / dpr;   // whole device pixels: crisp at 125%/150%
+  const y = Math.round((c.top - base.top) * dpr) / dpr;
+  caret.classList.toggle('glide', glide && caretShown);       // first appearance jumps, later moves glide
+  caret.style.transform = `translate(${x}px, ${y}px)`;
+  caret.style.height = Math.max(12, Math.round((c.bottom - c.top) * dpr) / dpr) + 'px';
+  caret.classList.add('show');
+  caretShown = true;
+  caret.classList.remove('blink');                             // solid while moving or typing...
+  clearTimeout(caretBlinkTimer);
+  caretBlinkTimer = setTimeout(() => caret.classList.add('blink'), 500); // ...then expand-blink
+}
+const scheduleCaret = () => { if (!caretFrame) caretFrame = requestAnimationFrame(() => placeCaret()); };
+for (const ev of ['selectionUpdate', 'update', 'focus', 'blur']) editor.on(ev, scheduleCaret);
+// Layout changes (resize, toolbar wrap, image load) move text under the caret: jump, don't glide.
+new ResizeObserver(() => { caretShown = false; scheduleCaret(); }).observe(editor.view.dom);
+
+/* line numbers (see .ln-gutter in the CSS): every line you see gets the next number, 1, 2, 3…
+   A paragraph that wraps onto two lines takes two numbers; empty lines and each code line count too.
+   Numbers re-flow when the column width changes, like a word processor's line numbering. */
+const gutter = $('#lnGutter');
+let lnFrame = null;
+// Visual lines of one text block: group the block's text rectangles by row.
+function visualLines(el) {
+  const range = document.createRange();
+  range.selectNodeContents(el);
+  const rects = [...range.getClientRects()].filter((r) => r.height > 0).sort((a, b) => a.top - b.top);
+  const lines = [];
+  for (const r of rects) {
+    const cur = lines[lines.length - 1];
+    if (cur && r.top < cur.bottom - 3) { cur.top = Math.min(cur.top, r.top); cur.bottom = Math.max(cur.bottom, r.bottom); }
+    else lines.push({ top: r.top, bottom: r.bottom });
+  }
+  return lines;
+}
+function renderLineNumbers() {
+  lnFrame = null;
+  if (!document.body.classList.contains('line-numbers')) { gutter.innerHTML = ''; return; }
+  const view = editor.view, base = composer.getBoundingClientRect();
+  const at = (p) => { try { return view.coordsAtPos(p); } catch { return null; } };
+  const lines = [];
+  editor.state.doc.descendants((node, pos) => {
+    if (node.type.name === 'codeBlock') {   // code never wraps: one line per newline, blank code lines included
+      let off = 0;
+      for (const text of node.textContent.split('\n')) { const r = at(pos + 1 + off); if (r) lines.push(r); off += text.length + 1; }
+      return false;
+    }
+    if (node.isTextblock) {
+      const dom = view.nodeDOM(pos);
+      const rows = node.content.size && dom instanceof HTMLElement ? visualLines(dom) : [];
+      if (rows.length) lines.push(...rows);
+      else { const r = at(pos + 1); if (r) lines.push(r); }   // empty line
+      return false;
+    }
+    if (node.type.name === 'image' || node.type.name === 'horizontalRule') {
+      const dom = view.nodeDOM(pos);
+      if (dom instanceof HTMLElement) { const r = dom.getBoundingClientRect(); lines.push({ top: r.top, bottom: r.top + 24 }); }
+      return false;
+    }
+    return true;   // lists, list items, quotes: look inside
+  });
+  const caret = editor.isFocused ? at(editor.state.selection.head) : null;
+  const caretMid = caret && (caret.top + caret.bottom) / 2;
+  gutter.innerHTML = lines.map((r, i) => {
+    const on = caret && caretMid >= r.top && caretMid <= r.bottom;
+    return `<span class="ln${on ? ' on' : ''}" style="top:${(r.top - base.top).toFixed(1)}px;height:${(r.bottom - r.top).toFixed(1)}px">${i + 1}</span>`;
+  }).join('');
+}
+function scheduleLines() { if (!lnFrame) lnFrame = requestAnimationFrame(renderLineNumbers); }
+for (const ev of ['update', 'selectionUpdate', 'focus', 'blur']) editor.on(ev, scheduleLines);
+new ResizeObserver(scheduleLines).observe(editor.view.dom);
+scheduleLines();
+
+/* link: VS Code quick input instead of an in-webview dialog */
+let linkRange = null;
+function askLink() {
+  linkRange = { from: editor.state.selection.from, to: editor.state.selection.to };
+  const qi = $('#quickinput'), input = $('#qiInput');
+  input.value = editor.getAttributes('link').href || '';
+  qi.classList.add('show');
+  input.focus();
+  input.select();
+}
+$('#qiInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') { $('#quickinput').classList.remove('show'); editor.commands.focus(); }
+  if (e.key === 'Enter') {
+    const href = e.target.value.trim();
+    $('#quickinput').classList.remove('show');
+    const c = editor.chain().focus().setTextSelection(linkRange).extendMarkRange('link');
+    (href ? c.setLink({ href }) : c.unsetLink()).run();
+  }
+});
+$('#qiInput').addEventListener('blur', () => $('#quickinput').classList.remove('show'));
+
+/* ------------------------------------------------------------------
+ * VS Code-native bits: title actions, save, toast
+ * ------------------------------------------------------------------ */
+let toastTimer;
+function toast(t1, t2 = '', icon = 'info') {
+  const el = $('#toast');
+  el.querySelector('.codicon').className = `codicon codicon-${icon}`;
+  $('#toastT1').textContent = t1;
+  $('#toastT2').textContent = t2;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3800);
+}
+$('#toastX').addEventListener('click', () => $('#toast').classList.remove('show'));
+
+$('#copyPrompt').addEventListener('click', async () => {
+  // "Copy as prompt": images become workspace-relative @paths so Claude Code attaches them.
+  let converted = 0;
+  const md = toMarkdown().replace(/!\[[^\]]*\]\(([^)]+)\)/g, (_, p) => { converted++; return '@' + wsFromRel(p); });
+  try { await navigator.clipboard.writeText(md); } catch { /* clipboard may be blocked for file:// pages */ }
+  toast('Copied prompt to clipboard', `${md.length} characters` + (converted ? ` · ${converted} image${converted > 1 ? 's' : ''} converted to @path` : ''));
+});
+
+$('#openText').addEventListener('click', () => setCtl('raw', $('#rawGroup').classList.contains('hidden') ? 'show' : 'hide'));
+
+window.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); saveCurrent(); toast('Saved', promptPath(current)); }
+  if ((e.ctrlKey || e.metaKey) && e.altKey && e.key.toLowerCase() === 'n') { e.preventDefault(); newPrompt(); }
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k' && editor.isFocused) { e.preventDefault(); askLink(); }
+  if (e.key === 'Escape') closeMenus();
+});
+
+/* ------------------------------------------------------------------
+ * Explorer tree (fake) with symlinks; drag a row into the editor
+ * ------------------------------------------------------------------ */
+const expanded = new Set(['src', 'src/server', 'shared', 'shared/utils']);
+function renderTree() {
+  const kids = new Map();
+  for (const e of ENTRIES) {
+    const parent = e.dir.slice(0, -1);
+    if (!kids.has(parent)) kids.set(parent, []);
+    kids.get(parent).push(e);
+  }
+  for (const list of kids.values()) list.sort((a, b) => (a.kind === b.kind ? a.name.localeCompare(b.name) : a.kind === 'dir' ? -1 : 1));
+  let html = '';
+  const walk = (dir, depth) => {
+    for (const e of kids.get(dir) || []) {
+      const isDir = e.kind === 'dir';
+      const open = expanded.has(e.path);
+      const tw = isDir ? `codicon codicon-chevron-${open ? 'down' : 'right'}` : '';
+      const ignored = e.path === STORE || e.path.startsWith(STORE + '/');   // gitignored: VS Code shows these dimmed
+      html += `<div class="row${current && e.path === promptPath(current) ? ' active' : ''}${e.link ? ' is-link' : ''}${ignored ? ' ignored' : ''}" data-path="${esc(e.path)}" draggable="true" style="padding-left:${8 + depth * 8}px" title="${esc(e.path)}${e.link ? ' → ' + esc(e.link) : ''}${e.path === STORE + '/.gitignore' ? ' (contains: *)' : ''}">` +
+        `<span class="twistie ${tw}"></span><i class="icon codicon codicon-${codiconFor(e)}"></i><span class="name">${esc(e.name)}</span>${e.link ? '<span class="deco">⤷</span>' : ''}</div>`;
+      if (isDir && open) walk(e.path, depth + 1);
+    }
+  };
+  walk('', 0);
+  $('#tree').innerHTML = html;
+}
+$('#tree').addEventListener('click', (e) => {
+  const row = e.target.closest('.row');
+  if (!row) return;
+  const ent = BY_PATH.get(row.dataset.path);
+  if (ent.kind === 'dir') { expanded.has(ent.path) ? expanded.delete(ent.path) : expanded.add(ent.path); renderTree(); }
+});
+$('#tree').addEventListener('dragstart', (e) => {
+  const row = e.target.closest('.row');
+  if (!row) return;
+  const ent = BY_PATH.get(row.dataset.path);
+  const id = ent.kind === 'dir' ? ent.path + '/' : ent.path;
+  e.dataTransfer.setData('application/x-pc-path', id);
+  e.dataTransfer.setData('text/plain', '@' + id);
+  e.dataTransfer.effectAllowed = 'copy';
+});
+function revealInTree(path) {
+  const parts = path.split('/');
+  for (let i = 1; i < parts.length; i++) expanded.add(parts.slice(0, i).join('/'));
+  if (BY_PATH.get(path)?.kind === 'dir') expanded.add(path);
+  renderTree();
+  const row = [...document.querySelectorAll('#tree .row')].find((r) => r.dataset.path === path);
+  if (row) { row.scrollIntoView({ block: 'nearest' }); row.classList.add('flash'); setTimeout(() => row.classList.remove('flash'), 1400); }
+}
+
+/* ------------------------------------------------------------------
+ * Prompt lifecycle: every prompt is a real file that saves itself.
+ * New prompts start as DD-HHmm-untitled.md and are renamed after their title
+ * on save; a new prompt that's left empty is discarded, so no clutter.
+ * ------------------------------------------------------------------ */
+let saveTimer = null;
+function scheduleSave() { clearTimeout(saveTimer); saveTimer = setTimeout(saveCurrent, 800); }
+function saveCurrent() {
+  clearTimeout(saveTimer);
+  if (!current) return;
+  current.html = editor.getHTML();
+  refreshMeta(current);
+  // The file gets its title-slug once, on the first save that has a title, and is never renamed after.
+  // The tab shows the live title anyway, so the filename doesn't need to keep up.
+  if (current.isNew && current.title) {
+    current.slug = uniqueSlug(current, slugify(current.title));
+    current.isNew = false;
+    buildWorkspace();
+    renderTree();
+  }
+  setDirty(false);
+  updateTitles();
+  renderLibrary();
+}
+// Prompts open in a webview panel, so the tab shows the prompt's title (a custom editor tab could only show the file name).
+function updateTitles() {
+  $('#tabTitle').textContent = current.title || 'Untitled prompt';
+  $('#rawTitle').textContent = fileName(current);
+  $('#composerTab').title = promptPath(current);
+}
+function loadIntoEditor(p) {
+  current = p;
+  editor.commands.setContent(p.html || '', { emitUpdate: false });
+  lastRaw = '';
+  refreshDerived();
+  setDirty(false);
+  updateTitles();
+  renderTree();
+  scheduleLines();
+}
+function openPrompt(id, { focus = false } = {}) {
+  const next = PROMPTS.find((p) => p.id === id);
+  if (!next) return;
+  if (next !== current) {
+    saveCurrent();
+    const prev = current;
+    loadIntoEditor(next);
+    if (prev && prev.isNew && !prev.text) discard(prev);   // a new prompt nobody typed in leaves no file behind
+  }
+  renderLibrary();
+  if (focus) editor.commands.focus('end');
+}
+function discard(p) {
+  PROMPTS = PROMPTS.filter((x) => x !== p);
+  buildWorkspace();
+  renderTree();
+  toast('Discarded empty prompt', 'Nothing was typed in it, so no file was kept.');
+}
+function newPrompt() {
+  const p = { id: 'n' + Date.now(), created: new Date(), html: '', pinned: false, isNew: true, slug: 'untitled', title: '', text: '' };
+  p.slug = uniqueSlug(p, 'untitled');
+  PROMPTS.unshift(p);
+  $('#libSearch').value = '';
+  $('#libSearchBox').classList.remove('has-text');
+  collapsed.delete('m:' + ym(p.created));
+  collapsed.delete('d:' + dayKey(p.created));
+  buildWorkspace();
+  openPrompt(p.id, { focus: true });
+  if (!document.querySelector('.activitybar [data-view="prompts"]').classList.contains('active')) setCtl('side', 'prompts');
+  toast('New prompt', `${promptPath(p)} · saves automatically`);
+}
+function deletePrompt(p) {
+  PROMPTS = PROMPTS.filter((x) => x !== p);
+  if (p === current) {
+    const next = PROMPTS.slice().sort((a, b) => b.created - a.created)[0];
+    if (next) loadIntoEditor(next); else { current = null; newPrompt(); }
+  }
+  buildWorkspace();
+  renderTree();
+  renderLibrary();
+  toast('Moved to Recycle Bin', `${fileName(p)}. Restore it from there if needed.`);
+}
+
+/* ------------------------------------------------------------------
+ * Prompt Composer panel: search box, then Pinned, then month → day → prompt.
+ * Search matches titles and the text inside prompts (including @paths),
+ * and shows the matching line under each prompt, like VS Code's Search view.
+ * ------------------------------------------------------------------ */
+const collapsed = new Set();
+const dayKey = (d) => `${ym(d)}-${pad(d.getDate())}`;
+const timeOf = (d) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+function dayLabel(d) {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const day = new Date(d); day.setHours(0, 0, 0, 0);
+  const diff = Math.round((today - day) / 864e5);
+  if (diff === 0) return 'Today';
+  if (diff === 1) return 'Yesterday';
+  return day.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+function highlight(s, q) {
+  const i = q ? s.toLowerCase().indexOf(q) : -1;
+  return i < 0 ? esc(s) : esc(s.slice(0, i)) + '<mark>' + esc(s.slice(i, i + q.length)) + '</mark>' + esc(s.slice(i + q.length));
+}
+function snippet(text, q) {
+  const flat = text.replace(/\n+/g, ' · ');
+  const i = flat.toLowerCase().indexOf(q);
+  if (i < 0) return null;
+  const from = Math.max(0, i - 22), to = Math.min(flat.length, i + q.length + 48);
+  return (from ? '…' : '') + highlight(flat.slice(from, to), q) + (to < flat.length ? '…' : '');
+}
+function renderLibrary() {
+  const tree = $('#libTree');
+  const q = $('#libSearch').value.trim().toLowerCase();
+  const all = PROMPTS.slice().sort((a, b) => b.created - a.created);
+  const list = q ? all.filter((p) => `${p.title}\n${p.text}`.toLowerCase().includes(q)) : all;
+  $('#libCount').textContent = q ? (list.length ? `${list.length} prompt${list.length > 1 ? 's' : ''} found` : 'No prompts found') : '';
+  if (!all.length) {
+    tree.innerHTML = '<div class="lib-welcome">No prompts yet.<button id="libWelcomeNew">New Prompt</button></div><div class="lib-empty-hint">Double-click here to start a new prompt</div>';
+    return;
+  }
+  const row = (cls, depth, inner, attrs = '') => `<div class="lrow ${cls}" style="padding-left:${4 + depth * 12}px" ${attrs}>${inner}</div>`;
+  const twistie = (key) => `<span class="twistie codicon codicon-chevron-${collapsed.has(key) && !q ? 'right' : 'down'}"></span>`;
+  const dirty = $('#composerTab').classList.contains('dirty');
+  const promptRow = (p, depth, dated) => {
+    let h = row(`prompt${p === current ? ' active' : ''}${p === current && dirty ? ' dirty' : ''}`, depth,
+      `<span class="twistie"></span><i class="icon codicon codicon-${p.pinned ? 'pinned' : 'note'}"></i><span class="name">${highlight(p.title || 'Untitled prompt', q)}</span><span class="dot"></span>` +
+      `<span class="desc">${dated ? p.created.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : timeOf(p.created)}</span>`,
+      `data-id="${p.id}" title="${esc(promptPath(p))}"`);
+    const s = q && snippet(p.text.slice(p.title.length), q);   // body only: the title row already shows title matches
+    if (s) h += row('snip', depth + 1, `<span class="twistie"></span><span class="name">${s}</span>`, `data-id="${p.id}"`);
+    return h;
+  };
+  let html = '';
+  const pinned = list.filter((p) => p.pinned);
+  if (pinned.length && !q) {
+    html += row('grp', 0, `${twistie('pinned')}<span class="name">Pinned</span><span class="badge">${pinned.length}</span>`, 'data-group="pinned"');
+    if (!collapsed.has('pinned')) pinned.forEach((p) => { html += promptRow(p, 1, true); });
+  }
+  // By default only the current month is listed (Pinned is separate). Older months appear only with
+  // "Show All Months" turned on. Search always covers every month, whatever that option says.
+  const thisMonth = ym(new Date());
+  const months = new Map();
+  for (const p of list) {
+    const k = ym(p.created);
+    if (!q && !showAllMonths && k !== thisMonth) continue;
+    if (!months.has(k)) months.set(k, []);
+    months.get(k).push(p);
+  }
+  if (!q && !months.has(thisMonth)) html += row('day', 1, '<span class="twistie"></span><span class="name" style="color:var(--vscode-descriptionForeground)">No prompts yet this month</span>');
+  for (const [mk, ps] of months) {
+    const mg = 'm:' + mk;
+    html += row('grp', 0, `${twistie(mg)}<span class="name">${ps[0].created.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span><span class="badge">${ps.length}</span>`, `data-group="${mg}"`);
+    if (collapsed.has(mg) && !q) continue;
+    const days = new Map();
+    for (const p of ps) { const k = dayKey(p.created); if (!days.has(k)) days.set(k, []); days.get(k).push(p); }
+    for (const [dk, dps] of days) {
+      const dg = 'd:' + dk;
+      html += row('day', 1, `${twistie(dg)}<i class="icon codicon codicon-calendar"></i><span class="name">${dayLabel(dps[0].created)}</span><span class="desc">${dps.length}</span>`, `data-group="${dg}"`);
+      if (collapsed.has(dg) && !q) continue;
+      dps.forEach((p) => { html += promptRow(p, 2, false); });
+    }
+  }
+  const older = !q && !showAllMonths && all.some((p) => ym(p.created) !== thisMonth);
+  tree.innerHTML = html + `<div class="lib-empty-hint">Double-click empty space for a new prompt${older ? '<br>Older months are hidden. Search finds every prompt.' : ''}</div>`;
+}
+// Setting promptComposer.panel.showAllMonths (default off), toggled from the panel's ⋯ menu.
+let showAllMonths = false;
+// When older months are shown, they start folded; this month stays open.
+for (const p of PROMPTS) if (ym(p.created) !== ym(new Date())) collapsed.add('m:' + ym(p.created));
+
+const libTree = $('#libTree');
+libTree.addEventListener('click', (e) => {
+  if (e.target.id === 'libWelcomeNew') return newPrompt();
+  const r = e.target.closest('.lrow');
+  if (!r) return;
+  if (r.dataset.group) { const k = r.dataset.group; collapsed.has(k) ? collapsed.delete(k) : collapsed.add(k); return renderLibrary(); }
+  if (r.dataset.id) openPrompt(r.dataset.id);
+});
+libTree.addEventListener('dblclick', (e) => {
+  if (!e.target.closest('.lrow, .lib-welcome')) newPrompt();          // empty space → new prompt
+  else if (e.target.closest('.lrow[data-id]')) editor.commands.focus('end');
+});
+$('#libSearch').addEventListener('input', () => { $('#libSearchBox').classList.toggle('has-text', !!$('#libSearch').value); renderLibrary(); });
+$('#libSearch').addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') { $('#libSearch').value = ''; $('#libSearchBox').classList.remove('has-text'); renderLibrary(); }
+  if (e.key === 'Enter') { const first = libTree.querySelector('.lrow.prompt'); if (first) openPrompt(first.dataset.id, { focus: true }); }
+});
+$('#libClear').addEventListener('click', (e) => { e.preventDefault(); $('#libSearch').value = ''; $('#libSearchBox').classList.remove('has-text'); renderLibrary(); $('#libSearch').focus(); });
+$('#newPrompt').addEventListener('click', newPrompt);
+// Double-click on empty tab-bar space. VS Code itself opens an empty "Untitled-1" text file there (no command,
+// no setting can change it); the extension notices that brand-new empty untitled tab and swaps it for a new prompt.
+$('#composerTab').parentElement.addEventListener('dblclick', (e) => { if (e.target === e.currentTarget) newPrompt(); });
+$('#viewMore').addEventListener('click', (e) => {
+  e.stopPropagation();
+  const menu = $('#viewMenu');
+  if (menu.classList.contains('show')) return menu.classList.remove('show');
+  menu.querySelector('[data-vact="months"]').setAttribute('aria-checked', String(showAllMonths));
+  const r = $('#viewMore').getBoundingClientRect();
+  menu.classList.add('show');
+  menu.style.left = Math.max(8, Math.min(r.left, window.innerWidth - menu.offsetWidth - 8)) + 'px';
+  menu.style.top = r.bottom + 2 + 'px';
+});
+$('#viewMenu').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-vact]');
+  if (!b) return;
+  $('#viewMenu').classList.remove('show');
+  if (b.dataset.vact === 'months') { showAllMonths = !showAllMonths; renderLibrary(); }
+  if (b.dataset.vact === 'folder') { setCtl('side', 'explorer'); revealInTree(STORE); }
+});
+document.addEventListener('mousedown', (e) => { if (!e.target.closest('#viewMenu, #viewMore')) $('#viewMenu').classList.remove('show'); });
+$('#collapsePrompts').addEventListener('click', () => {
+  collapsed.add('pinned');
+  for (const p of PROMPTS) { collapsed.add('m:' + ym(p.created)); collapsed.add('d:' + dayKey(p.created)); }
+  renderLibrary();
+});
+
+// Right-click menu. The extension gets VS Code's real menu via "webview/context" + data-vscode-context.
+let menuTarget = null;
+libTree.addEventListener('contextmenu', (e) => {
+  const r = e.target.closest('.lrow[data-id]');
+  if (!r) return;
+  e.preventDefault();
+  menuTarget = PROMPTS.find((p) => p.id === r.dataset.id);
+  const menu = $('#libMenu');
+  menu.querySelector('[data-act="pin"]').textContent = menuTarget.pinned ? 'Unpin' : 'Pin';
+  menu.classList.add('show');
+  menu.style.left = Math.min(e.clientX, window.innerWidth - menu.offsetWidth - 8) + 'px';
+  menu.style.top = Math.min(e.clientY, window.innerHeight - menu.offsetHeight - 8) + 'px';
+});
+document.addEventListener('mousedown', (e) => { if (!e.target.closest('#libMenu')) $('#libMenu').classList.remove('show'); });
+$('#libMenu').addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-act]');
+  const p = menuTarget;
+  if (!b || !p) return;
+  $('#libMenu').classList.remove('show');
+  const copy = async (text, what) => { try { await navigator.clipboard.writeText(text); } catch { /* blocked on file:// */ } toast(what, text.length > 80 ? text.slice(0, 80) + '…' : text); };
+  switch (b.dataset.act) {
+    case 'open': return openPrompt(p.id, { focus: true });
+    case 'side': openPrompt(p.id); return toast('Open to the Side', 'Opens in a second editor group next to this one.');
+    case 'copy': return p === current ? $('#copyPrompt').click() : copy(p.text, 'Copied prompt to clipboard');
+    case 'path': return copy('@' + promptPath(p), 'Copied @path for Claude Code');
+    case 'pin': p.pinned = !p.pinned; return renderLibrary();
+    case 'dup': {
+      if (p === current) saveCurrent();
+      const c = { id: 'd' + Date.now(), created: new Date(), html: p.html, pinned: false, isNew: false };
+      refreshMeta(c);
+      c.slug = uniqueSlug(c, slugify(c.title));
+      PROMPTS.unshift(c);
+      buildWorkspace();
+      openPrompt(c.id);
+      return toast('Duplicated', promptPath(c));
+    }
+    case 'reveal': setCtl('side', 'explorer'); return revealInTree(promptPath(p));
+    case 'delete': return deletePrompt(p);
+  }
+});
+
+/* ------------------------------------------------------------------
+ * Side bar views (Activity Bar: Explorer / Prompt Composer)
+ * ------------------------------------------------------------------ */
+function showSide(view) {
+  $('#sidebar').classList.toggle('hidden', view === 'hide');
+  $('#viewPrompts').classList.toggle('show', view === 'prompts');
+  $('#viewExplorer').classList.toggle('show', view === 'explorer');
+  document.querySelectorAll('.activitybar [data-view]').forEach((i) => i.classList.toggle('active', i.dataset.view === view));
+}
+document.querySelectorAll('.activitybar [data-view]').forEach((icon) => icon.addEventListener('click', () => {
+  const isOpen = !$('#sidebar').classList.contains('hidden') && icon.classList.contains('active');
+  setCtl('side', isOpen ? 'hide' : icon.dataset.view);   // clicking the open view's icon closes the side bar, like VS Code
+}));
+
+/* ------------------------------------------------------------------
+ * Mockup controls
+ * ------------------------------------------------------------------ */
+function setCtl(name, v) {
+  document.querySelectorAll(`.seg[data-ctl="${name}"] button`).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === v)));
+  const body = document.body;
+  if (name === 'theme') document.documentElement.dataset.theme = v;
+  if (name === 'look') webview.dataset.look = v;
+  if (name === 'mentions') { body.classList.remove('m-at', 'm-icon', 'm-plain'); body.classList.add('m-' + v); scheduleLines(); }
+  if (name === 'toolbar') {
+    body.classList.toggle('show-toolbar', v !== 'off');
+    body.classList.toggle('tb-mid', v === 'mid');
+    body.classList.toggle('tb-full', v === 'full');
+  }
+  if (name === 'width') body.classList.toggle('wide', v === 'full');
+  if (name === 'caret') { body.classList.toggle('smooth-caret', v === 'smooth'); placeCaret(false); }
+  if (name === 'lines') { body.classList.toggle('line-numbers', v === 'on'); scheduleLines(); }
+  if (name === 'side') showSide(v);
+  if (name === 'raw') { $('#rawGroup').classList.toggle('hidden', v === 'hide'); $('#openText').classList.toggle('on', v === 'show'); }
+}
+document.querySelectorAll('.seg').forEach((seg) => seg.addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (b) setCtl(seg.dataset.ctl, b.dataset.v);
+}));
+$('#reset').addEventListener('click', () => location.reload());
+
+// Narrow windows: start with the file-on-disk panel hidden so the side bar and editor keep room.
+if (window.innerWidth < 1180) setCtl('raw', 'hide');
+
+renderTree();
+refreshDerived();
+updateToolbar();
+setDirty(false);
+updateTitles();
+renderLibrary();
+</script>
+</body>
+</html>
