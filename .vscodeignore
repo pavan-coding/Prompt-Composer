@@ -1,0 +1,10 @@
+**
+!package.json
+!README.md
+!dist/extension.js
+!dist/editor.js
+!dist/editor.css
+!dist/library.js
+!dist/library.css
+!dist/media/**
+!media/**
