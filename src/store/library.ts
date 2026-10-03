@@ -154,4 +154,24 @@ export class Library implements vscode.Disposable {
   touch(): void {
     this.fireChange();
   }
+
+  /**
+   * Re-list the store and fix up the in-memory list. VS Code's watcher drops a create+delete pair that
+   * happens in quick succession, so the panel re-checks when it's shown and when the window regains focus.
+   */
+  async resync(): Promise<void> {
+    if (!this.loading) return;
+    await this.loading;
+    const files = await this.store.list();
+    const onDisk = new Set(files.map((f) => f.rel));
+    let changed = false;
+    for (const rel of [...this.entries.keys()]) {
+      if (!onDisk.has(rel) && !this.writing.has(rel)) { this.entries.delete(rel); changed = true; }
+    }
+    for (const f of files) {
+      const cur = this.entries.get(f.rel);
+      if (!cur || cur.mtimeMs !== f.mtimeMs || cur.size !== f.size) { await this.readEntry(f); changed = true; }
+    }
+    if (changed) this.fireChange();
+  }
 }

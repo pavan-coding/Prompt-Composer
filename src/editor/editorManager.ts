@@ -38,6 +38,16 @@ export class PromptDoc {
   readonly flushes = new Map<number, (c: { markdown: string; title: string }) => void>();
   saving: Promise<boolean> | undefined;
   autoSaveTimer: NodeJS.Timeout | undefined;
+  /** The webview has loaded this prompt and reported its content at least once. */
+  loaded = false;
+  private loadWaiters: (() => void)[] = [];
+  whenLoaded(): Promise<void> {
+    return this.loaded ? Promise.resolve() : new Promise((r) => this.loadWaiters.push(r));
+  }
+  markLoaded(): void {
+    this.loaded = true;
+    for (const r of this.loadWaiters.splice(0)) r();
+  }
   lastQuery: { seq: number; query: string } | undefined;
 
   constructor(readonly id: string, rel: string | undefined, readonly created: Date, savedText: string, current = savedText) {
@@ -83,6 +93,11 @@ export class EditorManager implements vscode.Disposable {
   private draftsTimer: NodeJS.Timeout | undefined;
   /** Resolves when the close question being shown is answered (tests wait on it). */
   closing: Promise<void> = Promise.resolve();
+  /** Modal questions go through here so tests can answer them. */
+  dialogs = {
+    warn: (message: string, options: vscode.MessageOptions, ...items: string[]): Thenable<string | undefined> =>
+      vscode.window.showWarningMessage(message, options, ...items),
+  };
 
   constructor(private readonly deps: EditorDeps) {
     const { context } = deps;
@@ -391,6 +406,7 @@ export class EditorManager implements vscode.Disposable {
   private async onMessage(doc: PromptDoc, m: EditorToHost): Promise<void> {
     switch (m.type) {
       case 'ready':
+        doc.loaded = false;
         return this.sendInit(doc);
       case 'changed': {
         const wasDirty = doc.dirty;
@@ -398,6 +414,7 @@ export class EditorManager implements vscode.Disposable {
         doc.current = m.markdown;
         doc.title = m.title;
         doc.stats = m.stats;
+        if (!doc.loaded) doc.markLoaded();
         if (doc.dirty && doc.preview) this.pin(doc);
         if (oldTitle !== doc.title || wasDirty !== doc.dirty) this.updateTab(doc);
         if (doc === this.active) this.deps.onActiveChanged(doc);
@@ -643,7 +660,7 @@ export class EditorManager implements vscode.Disposable {
       ? `Do you want to save the changes you made to "${docs[0].displayTitle}"?`
       : `Do you want to save the changes to the following ${docs.length} prompts?`;
     const detail = (docs.length > 1 ? docs.map((d) => d.displayTitle).join('\n') + '\n\n' : '') + "Your changes will be lost if you don't save them.";
-    const choice = await vscode.window.showWarningMessage(message, { modal: true, detail }, 'Save', "Don't Save");
+    const choice = await this.dialogs.warn(message, { modal: true, detail }, 'Save', "Don't Save");
     if (choice === 'Save') {
       for (const doc of docs) if (await this.save(doc, 'close')) this.forget(doc);
     } else if (choice === "Don't Save") {
@@ -711,7 +728,12 @@ export class EditorManager implements vscode.Disposable {
     this.draftsTimer = setTimeout(() => this.writeDraftsNow(), 400);
   }
 
-  private writeDraftsNow(): void {
+  /** The backed-up drafts (tests read them). */
+  drafts(): Record<string, Draft> {
+    return this.deps.context.workspaceState.get<Record<string, Draft>>(DRAFTS_KEY, {});
+  }
+
+  writeDraftsNow(): void {
     clearTimeout(this.draftsTimer);
     const drafts: Record<string, Draft> = {};
     for (const doc of this.docs.values()) {

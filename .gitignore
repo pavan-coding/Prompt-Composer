@@ -8,3 +8,5 @@ playwright-report/
 *.log
 .claude/
 sample-workspace/
+*.tmp.mjs
+*.tmp.cjs

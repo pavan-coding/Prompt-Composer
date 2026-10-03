@@ -24,6 +24,9 @@ export class LibraryView implements vscode.WebviewViewProvider, vscode.Disposabl
     private readonly actions: { newPrompt(): void; deletePrompt(id: string): Promise<void> },
   ) {
     if (library) this.disposables.push(library.onDidChange(() => this.render()));
+    this.disposables.push(vscode.window.onDidChangeWindowState((s) => {
+      if (s.focused && this.view?.visible) void this.library?.resync();
+    }));
     this.disposables.push(vscode.workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration('promptComposer.panel.showAllMonths')) this.render();
     }));
@@ -42,7 +45,11 @@ export class LibraryView implements vscode.WebviewViewProvider, vscode.Disposabl
     view.webview.options = { enableScripts: true, localResourceRoots: [vscode.Uri.joinPath(this.context.extensionUri, 'dist')] };
     view.webview.html = webviewHtml(view.webview, this.context.extensionUri, 'library', 'Prompts');
     view.webview.onDidReceiveMessage((m: LibraryToHost) => void this.onMessage(m));
-    view.onDidChangeVisibility(() => { if (view.visible) this.render(); });
+    view.onDidChangeVisibility(() => {
+      if (!view.visible) return;
+      this.render();
+      void this.library?.resync();
+    });
     view.onDidDispose(() => { if (this.view === view) this.view = undefined; });
     void this.library?.ensureLoaded().then(() => this.library?.prunePins());
   }

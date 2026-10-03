@@ -91,7 +91,7 @@ export function activate(context: vscode.ExtensionContext): PromptComposerApi | 
     if (id.startsWith('doc:')) {
       if (!doc) return;
       if (confirm) {
-        const ok = await vscode.window.showWarningMessage(`Delete the unsaved prompt "${doc.displayTitle}"?`, { modal: true }, 'Delete');
+        const ok = await editors.dialogs.warn(`Delete the unsaved prompt "${doc.displayTitle}"?`, { modal: true }, 'Delete');
         if (ok !== 'Delete') return;
       }
       await editors.discard(doc);
@@ -107,7 +107,7 @@ export function activate(context: vscode.ExtensionContext): PromptComposerApi | 
       const buttons = own.length ? [`Delete Prompt and ${own.length} Image${own.length > 1 ? 's' : ''}`, 'Delete Prompt Only'] : ['Delete'];
       const detail = (own.length ? `${own.length === 1 ? 'One image is' : `${own.length} images are`} used only by this prompt.\n` : '') +
         'You can restore it from the Recycle Bin / Trash.';
-      const choice = await vscode.window.showWarningMessage(`Are you sure you want to delete "${title}"?`, { modal: true, detail }, ...buttons);
+      const choice = await editors.dialogs.warn(`Are you sure you want to delete "${title}"?`, { modal: true, detail }, ...buttons);
       if (!choice) return;
       withImages = own.length > 0 && choice === buttons[0];
     }
