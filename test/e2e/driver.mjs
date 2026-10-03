@@ -57,7 +57,7 @@ export async function launch({ ws, settings = {}, userData, scale = 1.25, size =
     env,
     timeout: 90_000,
     args: [
-      ws,
+      ...(ws ? [ws] : []),
       `--extensionDevelopmentPath=${root}`,
       `--user-data-dir=${join(tmp, 'ud')}`,
       `--extensions-dir=${join(tmp, 'ext')}`,
@@ -100,7 +100,8 @@ export class VSCode {
   async ready() {
     await this.page.waitForFunction(() => !!window.driver, null, { timeout: 90_000 });
     await this.page.evaluate(() => window.driver.whenWorkbenchRestored());
-    await this.waitFor(async () => (await this.state().catch(() => null)) !== null, 30_000, 'extension test bridge');
+    // without a folder the extension has no test bridge
+    if (this.ws) await this.waitFor(async () => (await this.state().catch(() => null)) !== null, 30_000, 'extension test bridge');
   }
 
   // ---- extension bridge

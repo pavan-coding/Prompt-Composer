@@ -113,9 +113,15 @@ export function searchIndex(entries: IndexEntry[], query: string, recent: string
 
   const scored: { e: IndexEntry; score: number; pos: number[] }[] = [];
   for (const e of entries) {
-    const mn = fuzzy(q, e.path.slice(e.nameAt), e.lower.slice(e.nameAt));
+    const lowName = e.lower.slice(e.nameAt);
+    const mn = fuzzy(q, e.path.slice(e.nameAt), lowName);
     let r: { e: IndexEntry; score: number; pos: number[] } | null = null;
-    if (mn) r = { e, pos: mn.pos.map((p) => p + e.nameAt), score: 1000 + mn.score - e.depth };
+    if (mn) {
+      // the query is the whole name (or the name without its extension): the best kind of match
+      const stem = lowName.includes('.') ? lowName.slice(0, lowName.lastIndexOf('.')) : lowName;
+      const exact = lowName === q || stem === q ? 20 : 0;
+      r = { e, pos: mn.pos.map((p) => p + e.nameAt), score: 1000 + mn.score + exact - e.depth * 0.5 };
+    }
     else {
       const mp = fuzzy(q, e.path, e.lower);
       if (mp) r = { e, pos: mp.pos, score: mp.score - e.depth };

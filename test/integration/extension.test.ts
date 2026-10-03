@@ -231,6 +231,18 @@ suite('Saving', () => {
     }
   });
 
+  test('SV-05 Auto Save onWindowChange saves when VS Code loses focus', async () => {
+    await config('files', 'autoSave', 'onWindowChange');
+    try {
+      const doc = await newDoc('# Window change\n');
+      assert.equal(doc.rel, undefined);
+      api.editors.windowFocusChanged(false); // what VS Code reports when you switch to another app
+      await waitFor(() => doc.rel && !doc.dirty, 'saved on window change');
+    } finally {
+      await config('files', 'autoSave', undefined);
+    }
+  });
+
   test('SV-06 closing a changed prompt asks; Save writes it', async () => {
     const doc = await saveNew('# Ask on close\n');
     await setContent(doc, '# Ask on close\n\nnew text\n');
@@ -419,7 +431,13 @@ suite('Opening prompt files', () => {
     doc.panel!.reveal();
     await waitFor(() => api.editors.activeDoc === doc, 'active prompt');
     await vscode.commands.executeCommand('promptComposer.openAsText');
-    await waitFor(() => vscode.window.activeTextEditor?.document.uri.fsPath.endsWith(doc.rel!.split('/')[1]), 'text editor');
+    const ed = await waitFor(() => (vscode.window.activeTextEditor?.document.uri.fsPath.endsWith(doc.rel!.split('/')[1]) ? vscode.window.activeTextEditor : undefined), 'text editor');
+    // read-only in this session: typing into it changes nothing
+    await sleep(300);
+    await vscode.commands.executeCommand('type', { text: 'typed into the text view' });
+    await sleep(200);
+    assert.equal(ed.document.getText(), '# As text\n');
+    assert.equal(ed.document.isDirty, false);
   });
 });
 

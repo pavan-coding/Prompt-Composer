@@ -15,6 +15,7 @@ export function startTestBridge(api: PromptComposerApi, port: number, log: vscod
     status: api.statusBar.texts(),
     swaps: api.untitled.swaps,
     indexSize: api.index.size,
+    windowFocused: vscode.window.state.focused,
   });
   const server = http.createServer((req, res) => {
     let body = '';

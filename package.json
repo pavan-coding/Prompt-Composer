@@ -43,7 +43,7 @@
         {
           "type": "webview",
           "id": "promptComposer.library",
-          "name": "Prompts"
+          "name": "Prompt Composer"
         }
       ]
     },
@@ -587,6 +587,11 @@
           "minimum": 1000,
           "description": "The most files and folders the @ mention index will hold."
         }
+      }
+    },
+    "configurationDefaults": {
+      "files.readonlyInclude": {
+        "**/.prompt-composer/**": true
       }
     }
   },

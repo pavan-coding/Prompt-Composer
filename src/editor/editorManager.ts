@@ -111,15 +111,18 @@ export class EditorManager implements vscode.Disposable {
           for (const doc of this.panelDocs.values()) this.post(doc, { type: 'settings', settings });
         }
       }),
-      vscode.window.onDidChangeWindowState((s) => {
-        if (s.focused) return;
-        for (const doc of this.docs.values()) {
-          const mode = this.autoSave(doc).mode;
-          if (doc.dirty && (mode === 'onWindowChange' || mode === 'onFocusChange')) void this.save(doc, 'auto');
-        }
-      }),
+      vscode.window.onDidChangeWindowState((s) => this.windowFocusChanged(s.focused)),
     );
     this.loadDrafts(context.workspaceState.get<Record<string, Draft>>(DRAFTS_KEY, {}));
+  }
+
+  /** Auto Save onWindowChange / onFocusChange: save changed prompts when VS Code loses focus. */
+  windowFocusChanged(focused: boolean): void {
+    if (focused) return;
+    for (const doc of this.docs.values()) {
+      const mode = this.autoSave(doc).mode;
+      if (doc.dirty && (mode === 'onWindowChange' || mode === 'onFocusChange')) void this.save(doc, 'auto');
+    }
   }
 
   dispose(): void {
@@ -221,15 +224,37 @@ export class EditorManager implements vscode.Disposable {
     return doc;
   }
 
+  /** Opens in progress, per prompt: a fast double-click sends several opens before the file has been read. */
+  private readonly opening = new Map<string, Promise<PromptDoc | undefined>>();
+
   /** Open a saved prompt (by its rel path). Reuses its tab if it's already open. */
   async open(rel: string, opts: { viewColumn?: vscode.ViewColumn; preview?: boolean; focus?: boolean } = {}): Promise<PromptDoc | undefined> {
+    const pending = this.opening.get(rel);
+    if (pending) {
+      await pending;
+      return this.open(rel, opts);
+    }
+    const p = this.openNow(rel, opts);
+    this.opening.set(rel, p);
+    try {
+      return await p;
+    } finally {
+      this.opening.delete(rel);
+    }
+  }
+
+  private async openNow(rel: string, opts: { viewColumn?: vscode.ViewColumn; preview?: boolean; focus?: boolean }): Promise<PromptDoc | undefined> {
     let doc = this.docByRel(rel);
     if (doc?.panel) {
       if (!opts.preview && doc.preview) this.pin(doc);
       doc.panel.reveal(opts.viewColumn ?? doc.panel.viewColumn, !opts.focus && opts.preview);
       // a tab that's still loading this prompt (a preview just switched to it) takes focus once it's ready
       if (opts.focus) {
-        if (doc.loaded) this.post(doc, { type: 'focus' });
+        if (doc.loaded) {
+          this.post(doc, { type: 'focus' });
+          // VS Code may still be moving focus from the panel to this tab: ask once more a moment later
+          setTimeout(() => this.post(doc!, { type: 'focus' }), 150);
+        }
         else doc.focusOnLoad = true;
       }
       return doc;

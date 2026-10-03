@@ -667,8 +667,10 @@ function report(force: boolean): void {
   if (persist) vscode.setState({ ...persist, markdown });
   post({ type: 'changed', markdown, title: titleOfDoc(editor.state.doc), stats: stats(editor.state.doc, markdown) });
 }
+// Every change is sent at once (only the edited block is re-serialized, so it's cheap). Batching would lose the
+// last keystrokes when a tab is closed right after typing: a closed webview can't be asked for them any more.
 function scheduleChanged(): void {
-  if (changeTimer === undefined) changeTimer = window.setTimeout(() => report(true), 150);
+  report(true);
 }
 
 // ------------------------------------------------------------------------------------------- images
@@ -1148,7 +1150,7 @@ window.addEventListener('message', (ev: MessageEvent<HostToEditor>) => {
       linkWaiters.delete(m.requestId);
       return;
     case 'focus':
-      if (editor) editor.commands.focus(m.at ?? null);
+      if (editor) { window.focus(); editor.commands.focus(m.at ?? null); }
       else pendingFocus = m.at ?? null;
       return;
     case 'goToBroken':

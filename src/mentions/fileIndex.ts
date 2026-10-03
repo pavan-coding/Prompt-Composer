@@ -42,7 +42,7 @@ export class FileIndex implements vscode.Disposable {
   ) {
     this.disposables.push(
       vscode.workspace.onDidChangeConfiguration((e) => {
-        if (e.affectsConfiguration('files.exclude') || e.affectsConfiguration('promptComposer.mentions')) this.rebuild();
+        if (e.affectsConfiguration('files.exclude') || e.affectsConfiguration('promptComposer.mentions')) void this.rebuild();
       }),
       vscode.window.onDidChangeActiveTextEditor((ed) => {
         const uri = ed?.document.uri;
@@ -88,9 +88,11 @@ export class FileIndex implements vscode.Disposable {
     return this.building;
   }
 
-  private rebuild(): void {
-    if (!this.building) return;
+  /** Walk again (settings changed). Resolves when the new walk is done. */
+  rebuild(): Promise<void> {
+    if (!this.building) return this.ensureBuilt();
     this.building = this.build();
+    return this.building;
   }
 
   search(query: string, limit = 50): MentionItem[] {
@@ -136,6 +138,8 @@ export class FileIndex implements vscode.Disposable {
         }
         return false;
       }
+      // the watcher may have added it already while this walk was running
+      if (byPath.has(e.path)) return true;
       entries.push(e);
       byPath.set(e.path, e);
       return true;

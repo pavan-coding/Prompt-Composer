@@ -30,6 +30,7 @@ try {
       out: shots,
       shot: (name) => vsc.shot(shots, name),
       note: (msg) => { (result.notes ??= []).push(msg); },
+      skip: (reason) => { const e = new Error(reason); e.skip = true; throw e; },
       relaunch: async () => {
         await vsc.close();
         vsc = await launch({ ws: fixture.ws, userData: vsc.tmp });
@@ -43,13 +44,18 @@ try {
       await t.fn(ctx);
       result.ok = true;
     } catch (e) {
-      result.ok = false;
-      result.error = String(e?.stack ?? e).split('\n').slice(0, 6).join('\n');
-      await vsc.shot(shots, 'failure');
+      if (e?.skip) {
+        result.ok = true;
+        result.skipped = e.message;
+      } else {
+        result.ok = false;
+        result.error = String(e?.stack ?? e).split('\n').slice(0, 6).join('\n');
+        await vsc.shot(shots, 'failure');
+      }
     }
     result.ms = Date.now() - t0;
     results.push(result);
-    process.stdout.write(`\r${result.ok ? '✔' : '✘'} ${t.name} (${result.ms} ms)${result.notes ? '  — ' + result.notes.join('; ') : ''}\n`);
+    process.stdout.write(`\r${result.skipped ? '○' : result.ok ? '✔' : '✘'} ${t.name} (${result.ms} ms)${result.skipped ? '  — skipped: ' + result.skipped : ''}${result.notes ? '  — ' + result.notes.join('; ') : ''}\n`);
     if (!result.ok) process.stdout.write(`    ${result.error.replace(/\n/g, '\n    ')}\n`);
     // reset between tests
     try {
@@ -62,8 +68,9 @@ try {
   writeFileSync(join(out, 'console.log'), vsc.logs.join('\n'));
   await vsc.close();
 }
-const passed = results.filter((r) => r.ok).length;
-writeFileSync(join(out, 'results.json'), JSON.stringify({ passed, failed: results.length - passed, ms: Date.now() - started, results }, null, 2));
-console.log(`\n${passed} passed, ${results.length - passed} failed (${Math.round((Date.now() - started) / 1000)} s). Screenshots: ${out}`);
-process.exit(passed === results.length ? 0 : 1);
+const passed = results.filter((r) => r.ok && !r.skipped).length;
+const skipped = results.filter((r) => r.skipped).length;
+writeFileSync(join(out, 'results.json'), JSON.stringify({ passed, skipped, failed: results.length - passed - skipped, ms: Date.now() - started, results }, null, 2));
+console.log(`\n${passed} passed, ${skipped} skipped, ${results.length - passed - skipped} failed (${Math.round((Date.now() - started) / 1000)} s). Screenshots: ${out}`);
+process.exit(passed + skipped === results.length ? 0 : 1);
 void readFileSync; void existsSync; void readdirSync;

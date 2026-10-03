@@ -471,7 +471,9 @@ export const tests = [
       await shot('question');
       const text = await vsc.answerDialog('Save');
       assert.match(text, /Do you want to save the changes you made to "Close me"\?/);
-      await vsc.waitFor(() => readFileSync(join(vsc.ws, '.prompt-composer', ...rel.split('/')), 'utf8') === '# Close me\n\nadded line\n', 5000, 'saved');
+      const file = join(vsc.ws, '.prompt-composer', ...rel.split('/'));
+      await vsc.waitFor(() => readFileSync(file, 'utf8') === '# Close me\n\nadded line\n', 5000, 'saved')
+        .catch((e) => { throw new Error(`${e.message}: file is ${JSON.stringify(readFileSync(file, 'utf8'))}`); });
     },
   },
   {
@@ -763,6 +765,50 @@ export const tests = [
       assert.ok(ms < 3000, `${ms} ms`);
       const d = (await vsc.state()).docs.find((x) => x.rel === rel);
       assert.equal(d.dirty, false);
+    },
+  },
+  {
+    name: 'SV-05 Auto Save onWindowChange saves when the window loses focus',
+    async fn({ vsc, skip }) {
+      // Windows won't hand OS focus to a window started in the background; without it there's no focus change to observe.
+      // Playwright emulates focus (the page always believes it's focused, even minimized), so no window focus change
+      // can be observed here. The logic is covered by the integration test SV-05 and the manual guide.
+      skip('Playwright emulates window focus; covered by the integration test and the manual guide');
+      await setting(vsc, 'files', 'autoSave', 'onWindowChange');
+      try {
+        await newPrompt(vsc);
+        await vsc.type('# Window change save');
+        await vsc.waitFor(async () => (await activeDoc(vsc))?.dirty, 5000, 'dirty');
+        // what VS Code hears when another app takes focus
+        // move OS focus to another window, as when you switch to another app
+        await vsc.app.evaluate(({ BrowserWindow }) => { const other = new BrowserWindow({ width: 300, height: 200, show: true }); other.setAlwaysOnTop(true); other.focus(); globalThis.__pcOther = other; });
+        await vsc.waitFor(async () => { const d = (await vsc.state()).docs.find((x) => x.title === 'Window change save'); return d?.rel && !d.dirty; }, 6000, 'saved when the window lost focus');
+      } finally {
+        await vsc.app.evaluate(({ BrowserWindow }) => { globalThis.__pcOther?.destroy(); const w = BrowserWindow.getAllWindows()[0]; w.setAlwaysOnTop(true); w.focus(); w.setAlwaysOnTop(false); });
+        await setting(vsc, 'files', 'autoSave', undefined);
+      }
+    },
+  },
+  {
+    name: 'ST-14 without an open folder the panel explains and New Prompt asks for a folder',
+    async fn({ out }) {
+      const { launch } = await import('./driver.mjs');
+      const empty = await launch({ ws: undefined });
+      try {
+        await empty.palette('View: Show Prompt Composer');
+        const welcome = empty.libraryFrame().locator('.lib-welcome');
+        await welcome.waitFor({ timeout: 15_000 });
+        assert.match(await welcome.innerText(), /Open a folder to use Prompt Composer/);
+        await empty.shot(out, 'no-folder');
+        await empty.page.getByRole('button', { name: 'New Prompt', exact: true }).first().click();
+        await empty.sleep(1000);
+        await empty.shot(out, 'after-new-prompt');
+        // toasts wait for the window to have OS focus; the notification center has it either way
+        await empty.palette('Notifications: Show Notifications');
+        await empty.page.locator('.notifications-center', { hasText: 'Open a folder to use Prompt Composer' }).waitFor({ timeout: 5000 });
+      } finally {
+        await empty.close();
+      }
     },
   },
 ];
