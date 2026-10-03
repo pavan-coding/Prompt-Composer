@@ -52,7 +52,7 @@ This guide is for trying the extension by hand in VS Code's **Extension Developm
 | 1 | Click the **Prompt Composer** icon (a note) in the Activity Bar | The side bar titled "Prompt Composer", a search box, "No prompts yet." and a **New Prompt** button | PN-01 |
 | 2 | Double-click empty space in the panel | A new tab **Untitled prompt** with the caret ready and the hint "Write your prompt… Type / for commands, @ to mention a file" | ED-01 |
 | 3 | Type `# My first prompt` | The tab title changes to "My first prompt" as you type | ED-02 |
-| 4 | Look at the tab and the panel | A filled dot as the tab's icon; in the panel, under **October 2026 → Today**, an italic row with a dot (not saved yet) | SV-01, PN-10 |
+| 4 | Look at the tab and the panel | A filled dot as the tab's icon; in the panel, under **Today**, an italic row with a dot (not saved yet) | SV-01, PN-10 |
 | 5 | Press **Ctrl+S** | The dot goes away. The Explorer still doesn't show `.prompt-composer/`: VS Code hides it, and nothing was added to your settings. Panel **⋯ → Reveal Prompts Folder in File Explorer** shows it on disk: `.gitignore` (containing `*`) and `2026-10/DD-HHmm-my-first-prompt.md` | ST-01, ST-04, ST-16, CP-05 |
 | 6 | Change the heading to `# Renamed` and save | The tab shows "Renamed"; the file name doesn't change | ST-07 |
 | 7 | Make two more prompts, then single-click one in the panel, then another | Single-clicks reuse one *preview* tab | PN-06 |
@@ -62,10 +62,12 @@ This guide is for trying the extension by hand in VS Code's **Extension Developm
 | 11 | Pin one | A **Pinned** group appears at the top (it still shows under its day too) | PN-07 |
 | 12 | Duplicate one | A new prompt with the same text opens | ST-12 |
 | 13 | Delete one (right-click → Delete) | A confirmation; the file goes to the Recycle Bin and disappears from the panel. If it had images no other prompt uses, you're offered to delete those too | ST-11, IM-07 |
-| 14 | **⋯** in the panel title → **Show All Months** | Older months appear, folded, with counts (create an older one by copying a prompt file into a folder like `.prompt-composer/2026-08/`). **⋯ → Show Current Month Only** hides them again | PN-03, PN-04 |
-| 15 | Click **Collapse All** in the panel title | Every group folds; folds are remembered after Ctrl+R | PN-08 |
-| 16 | Click a row, then use ↑/↓, Enter, Delete | Keyboard navigation works | PN-12 |
-| 17 | **Ctrl+P** and type part of a prompt's file name; **Ctrl+Shift+F** for a word in a prompt | Neither lists prompt files: VS Code leaves `.prompt-composer/` out of Quick Open and Search. The panel's search finds them | ST-16 |
+| 14 | Look at the panel with prompts from earlier days | Only **Pinned** and **Today** are listed. At the bottom: "Earlier prompts are hidden. Search finds every prompt." with **Show this month** · **Show all months** links | PN-03 |
+| 15 | **⋯** in the panel title | It lists the two views not in use: **Show This Month**, **Show All Months** (and **Show Today Only** once you've switched) | PN-04 |
+| 16 | Click **Show this month**, then **⋯ → Show All Months**, then **⋯ → Show Today Only** | This month by day (Today, Yesterday, …); then every month, older ones folded with counts (copy a prompt file into a folder like `.prompt-composer/2026-08/` to get one); then back to Today | PN-02, PN-04 |
+| 17 | Click **Collapse All** in the panel title | Every group folds; folds are remembered after Ctrl+R | PN-08 |
+| 18 | Click a row, then use ↑/↓, Enter, Delete | Keyboard navigation works | PN-12 |
+| 19 | **Ctrl+P** and type part of a prompt's file name; **Ctrl+Shift+F** for a word in a prompt | Neither lists prompt files: VS Code leaves `.prompt-composer/` out of Quick Open and Search. The panel's search finds them | ST-16 |
 
 ## 3. Saving (left to you)
 
@@ -163,7 +165,7 @@ This guide is for trying the extension by hand in VS Code's **Extension Developm
 
 | Command | What it runs | Last result |
 |---|---|---|
-| `npm run test:unit` | Vitest, in Node: Markdown round trips, naming, titles/search text, library model, fuzzy matching, speed | 84 passed |
+| `npm run test:unit` | Vitest, in Node: Markdown round trips, naming, titles/search text, library model, fuzzy matching, speed | 89 passed |
 | `npm run test:integration` | Mocha inside a real Extension Development Host on a copy of the fixture workspace | 52 passed |
 | `npm run test:e2e` | Playwright driving a real VS Code window: typing, menus, dialogs, double-clicks, paste, reload, themes. Screenshots go to `test-results/e2e/<ID>/` | 40 passed, 1 skipped (SV-05: Playwright pretends the window always has focus, so section 3 row 8 is manual) |
 | `npm run package` then `node test/e2e/vsix-smoke.mjs` | Installs the packaged `.vsix` into a throwaway profile and makes and saves a prompt with it | passed (441 KB package) |

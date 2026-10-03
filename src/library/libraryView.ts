@@ -1,6 +1,6 @@
 // The Prompts panel in the Primary Side Bar (a webview view): search, Pinned, months → days → prompts.
 import * as vscode from 'vscode';
-import type { HostToLibrary, LibraryModel, LibraryToHost } from '../common/protocol';
+import type { HostToLibrary, LibraryModel, LibraryToHost, PanelShow } from '../common/protocol';
 import { buildLibraryModel } from '../store/libraryModel';
 import type { Library } from '../store/library';
 import type { EditorManager } from '../editor/editorManager';
@@ -8,6 +8,12 @@ import { webviewHtml } from '../editor/html';
 
 export const LIBRARY_VIEW_ID = 'promptComposer.library';
 const FOLDS_KEY = 'promptComposer.folds';
+
+/** The panel.show setting: today (default), this month, or every month. */
+export function panelShow(): PanelShow {
+  const v = vscode.workspace.getConfiguration('promptComposer').get<string>('panel.show');
+  return v === 'month' || v === 'all' ? v : 'today';
+}
 
 export class LibraryView implements vscode.WebviewViewProvider, vscode.Disposable {
   private view: vscode.WebviewView | undefined;
@@ -21,14 +27,14 @@ export class LibraryView implements vscode.WebviewViewProvider, vscode.Disposabl
     private readonly context: vscode.ExtensionContext,
     private readonly library: Library | undefined,
     private readonly editors: EditorManager | undefined,
-    private readonly actions: { newPrompt(): void; deletePrompt(id: string): Promise<void> },
+    private readonly actions: { newPrompt(): void; deletePrompt(id: string): Promise<void>; setShow(show: PanelShow): Promise<void> },
   ) {
     if (library) this.disposables.push(library.onDidChange(() => this.render()));
     this.disposables.push(vscode.window.onDidChangeWindowState((s) => {
       if (s.focused && this.view?.visible) void this.library?.resync();
     }));
     this.disposables.push(vscode.workspace.onDidChangeConfiguration((e) => {
-      if (e.affectsConfiguration('promptComposer.panel.showAllMonths')) this.render();
+      if (e.affectsConfiguration('promptComposer.panel.show')) this.render();
     }));
     // Today/Yesterday labels and the current month move at midnight.
     const tick = setInterval(() => this.render(), 60_000);
@@ -80,7 +86,7 @@ export class LibraryView implements vscode.WebviewViewProvider, vscode.Disposabl
   model(): LibraryModel {
     return buildLibraryModel(this.editors?.libraryItems() ?? [], {
       query: this.query,
-      showAllMonths: vscode.workspace.getConfiguration('promptComposer').get('panel.showAllMonths', false),
+      show: panelShow(),
       now: new Date(),
       folder: !!this.library,
       locale: vscode.env.language,
@@ -117,6 +123,9 @@ export class LibraryView implements vscode.WebviewViewProvider, vscode.Disposabl
         return;
       case 'folds':
         await this.context.workspaceState.update(FOLDS_KEY, m.collapsed);
+        return;
+      case 'show':
+        await this.actions.setShow(m.show);
         return;
       case 'log':
         console[m.level === 'info' ? 'log' : m.level](`[library] ${m.message}`);

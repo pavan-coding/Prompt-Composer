@@ -12,7 +12,7 @@ Automated tests include the case ID in their name.
 
 **Result** is filled in by the last full run (2026-10-03, Windows 11, VS Code 1.140): ✅ pass, ❌ fail, ⚠️ works but misses a target, 👤 manual only.
 
-Totals: 84 unit tests, 52 integration tests, 40 end-to-end tests passed, 1 end-to-end test skipped (SV-05, see its row).
+Totals: 89 unit tests, 52 integration tests, 40 end-to-end tests passed, 1 end-to-end test skipped (SV-05, see its row).
 
 ## ST: storage on disk
 
@@ -64,16 +64,16 @@ Totals: 84 unit tests, 52 integration tests, 40 end-to-end tests passed, 1 end-t
 | ID | Case | Expected | Layer | Result |
 |---|---|---|---|---|
 | PN-01 | No prompts yet | Welcome text and a New Prompt button | E | ✅ |
-| PN-02 | Default view | Pinned group, then the current month by day (Today, Yesterday, "Wed, Oct 1"), newest first, each row with title and time | U, E | ✅ |
-| PN-03 | Older months hidden | Not listed; a quiet line says they're hidden and search finds them | U, E | ✅ |
-| PN-04 | Show All Months | ⋯ menu toggles the setting; older months appear folded with counts; turning it off hides them again | I, E | ✅ |
+| PN-02 | This Month | Pinned group, then the current month by day (Today, Yesterday, "Wed, Oct 1"), newest first, each row with title and time | U, E | ✅ |
+| PN-03 | Default view: today only | Pinned, then a top-level Today group; earlier days and months aren't listed; a quiet line says so, with Show this month / Show all months links | U, I, E | ✅ |
+| PN-04 | Today / This Month / All Months | `promptComposer.panel.show` (default `today`); the ⋯ menu lists the two choices not in use and writes the user setting; the footer links do the same; All Months shows older months folded with counts | I, E | ✅ |
 | PN-05 | Search | Matches title, body and `@paths` across all months; shows a count, each prompt, and its matching line with the match highlighted; Esc clears; Enter opens the first result | U, E | ✅ |
 | PN-06 | Click and double-click | Click opens a preview tab (reused by the next click); double-click opens a normal tab with the caret in it; double-click on empty space starts a new prompt | E | ✅ |
 | PN-07 | Context menu | Open, Open to the Side, Copy as Prompt, Copy @Path for Claude, Pin/Unpin, Duplicate, Reveal in File Explorer, Delete, all working | I, E | ✅ |
 | PN-08 | Collapse All and fold state | Title-bar button folds every group; folds are remembered after a reload | E | ✅ |
 | PN-09 | Open and dirty markers | The open prompt is highlighted; a prompt with unsaved changes shows a dot | E | ✅ |
 | PN-10 | Unsaved new prompt | Appears under Today with a dot once it has content | I, E | ✅ |
-| PN-11 | New month | "No prompts yet this month" until one is saved | U | ✅ |
+| PN-11 | Nothing yet | "No prompts yet today" (or "this month" when showing months) until one is saved; an unsaved new prompt counts | U | ✅ |
 | PN-12 | Keyboard | ↑/↓ moves, Enter opens, Delete deletes (with confirmation) | E | ✅ |
 | PN-13 | Search speed | Under 30 ms with 5,000 prompts | U | ✅ 12 ms |
 

@@ -1,7 +1,7 @@
 // The Prompts panel (webview view). The host does the grouping and search; this page renders rows,
 // keeps fold state, and sends clicks, double-clicks and keys back. Right-click uses VS Code's own menu.
 import './library.css';
-import type { HostToLibrary, LibraryModel, LibraryToHost, PromptRow } from '../../common/protocol';
+import type { HostToLibrary, LibraryModel, LibraryToHost, PanelShow, PromptRow } from '../../common/protocol';
 
 declare function acquireVsCodeApi(): { postMessage(m: unknown): void; getState(): unknown; setState(s: unknown): void };
 const vscode = acquireVsCodeApi();
@@ -79,24 +79,34 @@ function render(): void {
     html += row('grp', 0, `${twistie('pinned')}<span class="name">Pinned</span><span class="badge">${m.pinned.length}</span>`, 'data-group="pinned"');
     if (!collapsed.has('pinned')) for (const p of m.pinned) html += promptRow(p, 1, true);
   }
-  if (m.emptyCurrentMonth) html += row('quiet', 1, '<span class="twistie"></span><span class="name">No prompts yet this month</span>');
+  if (m.empty) html += row('quiet', 1, `<span class="twistie"></span><span class="name">No prompts yet ${m.show === 'today' ? 'today' : 'this month'}</span>`);
+  // Showing today only: "Today" is a top-level group like Pinned, without its month.
+  const flat = m.show === 'today' && !q;
   for (const month of m.months) {
-    const mg = 'm:' + month.key;
-    if (!seen.has(month.key)) {
-      seen.add(month.key);
-      if (!month.current) collapsed.add(mg);
+    if (!flat) {
+      const mg = 'm:' + month.key;
+      if (!seen.has(month.key)) {
+        seen.add(month.key);
+        if (!month.current) collapsed.add(mg);
+      }
+      html += row('grp', 0, `${twistie(mg)}<span class="name">${esc(month.label)}</span><span class="badge">${month.count}</span>`, `data-group="${mg}"`);
+      if (collapsed.has(mg) && !q) continue;
     }
-    html += row('grp', 0, `${twistie(mg)}<span class="name">${esc(month.label)}</span><span class="badge">${month.count}</span>`, `data-group="${mg}"`);
-    if (collapsed.has(mg) && !q) continue;
     for (const day of month.days) {
       const dg = 'd:' + day.key;
-      html += row('day', 1, `${twistie(dg)}<i class="icon codicon codicon-calendar"></i><span class="name">${esc(day.label)}</span><span class="desc">${day.prompts.length}</span>`, `data-group="${dg}"`);
+      html += flat
+        ? row('grp', 0, `${twistie(dg)}<span class="name">${esc(day.label)}</span><span class="badge">${day.prompts.length}</span>`, `data-group="${dg}"`)
+        : row('day', 1, `${twistie(dg)}<i class="icon codicon codicon-calendar"></i><span class="name">${esc(day.label)}</span><span class="desc">${day.prompts.length}</span>`, `data-group="${dg}"`);
       if (collapsed.has(dg) && !q) continue;
-      for (const p of day.prompts) html += promptRow(p, 2, false);
+      for (const p of day.prompts) html += promptRow(p, flat ? 1 : 2, false);
     }
   }
-  const older = m.hiddenOlder ? '<span>Older months are hidden. Search finds every prompt.</span>' : '';
-  tree.innerHTML = html + `<div class="lib-empty-hint"><span>Double-click empty space for a new prompt</span>${older}</div>`;
+  const link = (show: PanelShow, text: string) => `<a href="#" data-show="${show}">${text}</a>`;
+  const hidden = !m.hidden || q ? ''
+    : m.show === 'today'
+      ? `<span>Earlier prompts are hidden. Search finds every prompt.</span><span>${link('month', 'Show this month')} · ${link('all', 'Show all months')}</span>`
+      : `<span>Older months are hidden. Search finds every prompt.</span><span>${link('all', 'Show all months')}</span>`;
+  tree.innerHTML = html + `<div class="lib-empty-hint"><span>Double-click empty space for a new prompt</span>${hidden}</div>`;
   saveState();
 }
 
@@ -142,6 +152,8 @@ $('#clear').addEventListener('click', (e) => {
 tree.addEventListener('click', (e) => {
   const target = e.target as HTMLElement;
   if (target.id === 'welcomeNew') { post({ type: 'newPrompt' }); return; }
+  const show = target.closest<HTMLElement>('a[data-show]');
+  if (show) { e.preventDefault(); post({ type: 'show', show: show.dataset.show as PanelShow }); return; }
   const r = target.closest<HTMLElement>('.lrow');
   if (!r) return;
   if (r.dataset.group) {
@@ -159,7 +171,7 @@ tree.addEventListener('click', (e) => {
 tree.addEventListener('dblclick', (e) => {
   const target = e.target as HTMLElement;
   const r = target.closest<HTMLElement>('.lrow');
-  if (!r && !target.closest('.lib-welcome')) { post({ type: 'newPrompt' }); return; }
+  if (!r && !target.closest('.lib-welcome, a')) { post({ type: 'newPrompt' }); return; }
   if (r?.dataset.id) post({ type: 'open', id: r.dataset.id, preview: false, focus: true });
 });
 tree.addEventListener('keydown', (e) => {

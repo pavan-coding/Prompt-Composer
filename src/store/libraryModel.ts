@@ -1,6 +1,7 @@
-// Builds what the Prompts panel shows: Pinned, then months → days → prompts, or search results.
+// Builds what the Prompts panel shows: Pinned, then months → days → prompts (today's, this month's or all),
+// or search results.
 // Pure (no VS Code API), so it's unit-tested directly.
-import type { DayGroup, LibraryModel, MonthGroup, PromptRow } from '../common/protocol';
+import type { DayGroup, LibraryModel, MonthGroup, PanelShow, PromptRow } from '../common/protocol';
 import { dayKey, monthKey, timeOf } from '../common/naming';
 
 export interface LibraryItem {
@@ -21,7 +22,7 @@ export interface LibraryItem {
 
 export interface ModelOptions {
   query: string;
-  showAllMonths: boolean;
+  show: PanelShow;
   now: Date;
   folder: boolean;
   locale?: string;
@@ -125,6 +126,7 @@ export function buildLibraryModel(items: LibraryItem[], opts: ModelOptions): Lib
   const query = opts.query.trim();
   const sorted = items.slice().sort((a, b) => b.created.getTime() - a.created.getTime() || a.id.localeCompare(b.id));
   const thisMonth = monthKey(now);
+  const today = dayKey(now);
   const model: LibraryModel = {
     folder: opts.folder,
     total: items.length,
@@ -132,9 +134,9 @@ export function buildLibraryModel(items: LibraryItem[], opts: ModelOptions): Lib
     found: 0,
     pinned: [],
     months: [],
-    hiddenOlder: false,
-    showAllMonths: opts.showAllMonths,
-    emptyCurrentMonth: false,
+    show: opts.show,
+    hidden: false,
+    empty: false,
   };
 
   let listed: { item: LibraryItem; hit?: Hit }[];
@@ -150,7 +152,8 @@ export function buildLibraryModel(items: LibraryItem[], opts: ModelOptions): Lib
   const days = new Map<string, DayGroup>();
   for (const { item, hit } of listed) {
     const mk = monthKey(item.created);
-    if (!query && !opts.showAllMonths && mk !== thisMonth) { model.hiddenOlder = true; continue; }
+    const dk = dayKey(item.created);
+    if (!query && (opts.show === 'today' ? dk !== today : opts.show === 'month' && mk !== thisMonth)) { model.hidden = true; continue; }
     let month = months.get(mk);
     if (!month) {
       month = {
@@ -163,7 +166,6 @@ export function buildLibraryModel(items: LibraryItem[], opts: ModelOptions): Lib
       months.set(mk, month);
     }
     month.count++;
-    const dk = dayKey(item.created);
     let day = days.get(dk);
     if (!day) {
       day = { key: dk, label: dayLabel(item.created, now, locale), prompts: [] };
@@ -173,6 +175,6 @@ export function buildLibraryModel(items: LibraryItem[], opts: ModelOptions): Lib
     day.prompts.push(row(item, locale, hit, query.length));
   }
   model.months = [...months.values()];
-  model.emptyCurrentMonth = !query && !months.has(thisMonth);
+  model.empty = !query && (opts.show === 'today' ? !days.has(today) : !months.has(thisMonth));
   return model;
 }

@@ -46,7 +46,7 @@ Then run `npm run dev` (or Ctrl+F5 on **Run Extension (sample workspace)**) to o
 | `promptComposer.editor.width` | `full` | `full` or `readable` (648px column) |
 | `promptComposer.caret` | `smooth` | Gliding caret with VS Code's expand blink, or `native` |
 | `promptComposer.lineNumbers` | on | Visual line numbers |
-| `promptComposer.panel.showAllMonths` | off | List older months in the panel (search always covers them) |
+| `promptComposer.panel.show` | `today` | What the panel lists: `today`, `month` (this month by day) or `all` months. Also in the panel's ⋯ menu; search always covers every month |
 | `promptComposer.untitledFiles` | `doubleClick` | Turn a tab-bar double-click's Untitled file into a prompt (`always`, `off`) |
 | `promptComposer.gitignore` | on | Write `.prompt-composer/.gitignore` |
 | `promptComposer.mentions.exclude` | `.git`, `node_modules` | Left out of `@` suggestions, besides `files.exclude` |

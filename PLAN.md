@@ -168,14 +168,16 @@ my-app/                                   ← the folder VS Code is opened on
   - Enter opens the first result; Esc clears the search.
 - **By default the panel shows only two things:**
   - **Pinned**, a separate group at the top, for prompts you keep coming back to (from any month).
-  - **The current month**, by day: Today, Yesterday, then "Wed, Oct 1". Inside each day, prompts are newest first, each showing its title and time.
-- **Older months are never listed unless you ask.** The panel's **⋯** menu has a **Show All Months** toggle.
-  - It's a native menu item bound to the setting `promptComposer.panel.showAllMonths` (default off). Extensions can't put a check mark on menu items, so the menu shows **Show All Months** when it's off and **Show Current Month Only** when it's on.
-  - When it's on, older months appear below the current one (October 2026, September 2026…), each with a count badge, starting folded.
-  - When it's off, a quiet line at the bottom says "Older months are hidden. Search finds every prompt."
-- **Search always covers every month**, whatever Show All Months is set to. Results from older months appear grouped under their month.
+  - **Today**: today's prompts as one group, newest first, each showing its title and time.
+- **You choose how far back the panel lists**, in its **⋯** menu (setting `promptComposer.panel.show`):
+  - **Show Today Only** (`today`, the default): Pinned and Today.
+  - **Show This Month** (`month`): the current month by day: Today, Yesterday, then "Wed, Oct 1".
+  - **Show All Months** (`all`): every month (October 2026, September 2026…), each with a count badge. Older months start folded.
+  - Extensions can't put a check mark on menu items, so the menu lists the two choices not in use.
+  - When prompts are left out, a quiet line at the bottom says so ("Earlier prompts are hidden. Search finds every prompt.") with **Show this month** / **Show all months** links.
+- **Search always covers every month**, whatever the panel shows. Results appear grouped under their month.
 - Collapse All is in the title bar, and fold state is remembered.
-- At the start of a new month, the current month shows "No prompts yet this month" until you write one.
+- Until you write a prompt today (or this month, when showing months), a quiet row says "No prompts yet today" / "No prompts yet this month".
 - **The open prompt is highlighted**, with a dot while it has unsaved changes. A new prompt that hasn't been saved yet shows under Today with its dot.
 - **Click** opens a prompt as a *preview*, like VS Code's single-click in the Explorer. Clicking another prompt replaces the preview, so browsing doesn't pile up tabs. Typing in it, or double-clicking its row, makes it a normal tab. **Double-click** also puts the caret in it.
 - **Each prompt opens in one tab.** Opening a prompt that's already open focuses its tab.
@@ -474,7 +476,7 @@ The defaults are the choices made in the mockup's control bar.
 | `promptComposer.editor.width` | `"full"` (whole editor width), `"readable"` (648px column) | `"full"` | Width |
 | `promptComposer.caret` | `"smooth"`, `"native"` | `"smooth"` | Caret |
 | `promptComposer.lineNumbers` | on / off | on | Line numbers |
-| `promptComposer.panel.showAllMonths` | on / off | off | Panel ⋯ menu |
+| `promptComposer.panel.show` | `today` / `month` / `all` | `today` | Panel ⋯ menu, or the links in the panel's footer |
 | `promptComposer.untitledFiles` | `"doubleClick"`, `"always"`, `"off"` | `"doubleClick"` | (tab-bar double-click) |
 | `promptComposer.gitignore` | on / off: write `.prompt-composer/.gitignore` | on | n/a |
 | `promptComposer.mentions.exclude` | glob list, added to `files.exclude` | `["**/.git", "**/node_modules"]` | n/a |

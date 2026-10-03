@@ -469,12 +469,17 @@ suite('Panel', () => {
     return [...m.pinned, ...m.months.flatMap((x) => x.days.flatMap((d) => d.prompts))];
   };
 
-  test('PN-04 Show All Months / Show Current Month Only', async () => {
-    await vscode.commands.executeCommand('promptComposer.showAllMonths');
-    assert.equal(vscode.workspace.getConfiguration('promptComposer').get('panel.showAllMonths'), true);
-    await vscode.commands.executeCommand('promptComposer.hideOlderMonths');
-    assert.equal(vscode.workspace.getConfiguration('promptComposer').get('panel.showAllMonths'), false);
-    await config('promptComposer', 'panel.showAllMonths', undefined);
+  test('PN-03 PN-04 the panel shows today by default; Show This Month / All Months / Today Only switch it', async () => {
+    const show = () => vscode.workspace.getConfiguration('promptComposer').inspect<string>('panel.show')!;
+    assert.equal(show().defaultValue, 'today');
+    assert.equal(api.libraryView.model().show, 'today');
+    for (const [command, value] of [['showThisMonth', 'month'], ['showAllMonths', 'all'], ['showToday', 'today']]) {
+      await vscode.commands.executeCommand(`promptComposer.${command}`);
+      assert.equal(show().globalValue, value, command);
+      assert.equal(show().workspaceValue, undefined, 'not written to the workspace');
+      await waitFor(() => api.libraryView.lastModel?.show === value, `panel re-rendered for ${value}`);
+    }
+    await config('promptComposer', 'panel.show', undefined);
   });
 
   test('PN-07 right-click commands: pin, unpin, open to the side', async () => {

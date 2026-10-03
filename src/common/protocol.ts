@@ -118,6 +118,9 @@ export interface PromptRow {
 export interface DayGroup { key: string; label: string; prompts: PromptRow[] }
 export interface MonthGroup { key: string; label: string; count: number; current: boolean; days: DayGroup[] }
 
+/** What the panel lists when not searching (setting promptComposer.panel.show). */
+export type PanelShow = 'today' | 'month' | 'all';
+
 export interface LibraryModel {
   folder: boolean;
   total: number;
@@ -125,10 +128,11 @@ export interface LibraryModel {
   found: number;
   pinned: PromptRow[];
   months: MonthGroup[];
-  hiddenOlder: boolean;
-  showAllMonths: boolean;
-  /** The current month has no prompts (shown as a quiet row). */
-  emptyCurrentMonth: boolean;
+  show: PanelShow;
+  /** Some prompts aren't listed because of `show` (a quiet line says so). */
+  hidden: boolean;
+  /** Nothing to list for today (`show` is today) or this month (otherwise): shown as a quiet row. */
+  empty: boolean;
 }
 
 export type HostToLibrary =
@@ -144,4 +148,5 @@ export type LibraryToHost =
   | { type: 'newPrompt' }
   | { type: 'delete'; id: string }
   | { type: 'folds'; collapsed: string[] }
+  | { type: 'show'; show: PanelShow }
   | { type: 'log'; level: 'info' | 'warn' | 'error'; message: string };

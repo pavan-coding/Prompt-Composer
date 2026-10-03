@@ -61,13 +61,18 @@
         "icon": "$(collapse-all)"
       },
       {
-        "command": "promptComposer.showAllMonths",
-        "title": "Show All Months",
+        "command": "promptComposer.showToday",
+        "title": "Show Today Only",
         "category": "Prompt Composer"
       },
       {
-        "command": "promptComposer.hideOlderMonths",
-        "title": "Show Current Month Only",
+        "command": "promptComposer.showThisMonth",
+        "title": "Show This Month",
+        "category": "Prompt Composer"
+      },
+      {
+        "command": "promptComposer.showAllMonths",
+        "title": "Show All Months",
         "category": "Prompt Composer"
       },
       {
@@ -191,14 +196,19 @@
           "group": "navigation@2"
         },
         {
-          "command": "promptComposer.showAllMonths",
-          "when": "view == promptComposer.library && !config.promptComposer.panel.showAllMonths",
-          "group": "1_months@1"
+          "command": "promptComposer.showToday",
+          "when": "view == promptComposer.library && config.promptComposer.panel.show != 'today'",
+          "group": "1_show@1"
         },
         {
-          "command": "promptComposer.hideOlderMonths",
-          "when": "view == promptComposer.library && config.promptComposer.panel.showAllMonths",
-          "group": "1_months@1"
+          "command": "promptComposer.showThisMonth",
+          "when": "view == promptComposer.library && config.promptComposer.panel.show != 'month'",
+          "group": "1_show@2"
+        },
+        {
+          "command": "promptComposer.showAllMonths",
+          "when": "view == promptComposer.library && config.promptComposer.panel.show != 'all'",
+          "group": "1_show@3"
         },
         {
           "command": "promptComposer.revealFolder",
@@ -577,10 +587,20 @@
           "default": true,
           "description": "Show line numbers in the prompt editor. They count the lines you see: a wrapped paragraph takes one number per line."
         },
-        "promptComposer.panel.showAllMonths": {
-          "type": "boolean",
-          "default": false,
-          "description": "List every month in the Prompts panel. When off, only Pinned and the current month are listed; search still covers every month."
+        "promptComposer.panel.show": {
+          "type": "string",
+          "enum": [
+            "today",
+            "month",
+            "all"
+          ],
+          "enumDescriptions": [
+            "Pinned and today's prompts.",
+            "Pinned and this month's prompts, by day.",
+            "Pinned and every month, newest first. Older months start folded."
+          ],
+          "default": "today",
+          "markdownDescription": "What the Prompts panel lists. Also in the panel's **⋯** menu. Search always covers every month."
         },
         "promptComposer.untitledFiles": {
           "type": "string",

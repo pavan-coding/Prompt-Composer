@@ -7,6 +7,7 @@ import { Library } from './store/library';
 import { EditorManager, PromptDoc } from './editor/editorManager';
 import { REDIRECT_VIEW_TYPE, RedirectEditorProvider } from './editor/redirectEditor';
 import { LIBRARY_VIEW_ID, LibraryView } from './library/libraryView';
+import type { PanelShow } from './common/protocol';
 import { UntitledSwap } from './untitled/untitledSwap';
 import { FileIndex } from './mentions/fileIndex';
 import { ImageStore } from './images/imageStore';
@@ -41,9 +42,9 @@ export function activate(context: vscode.ExtensionContext): PromptComposerApi | 
 
   if (!folder || folder.uri.scheme !== 'file') {
     // No folder: the panel explains, commands say why they can't run.
-    const view = new LibraryView(context, undefined, undefined, { newPrompt: () => void noFolder(), deletePrompt: async () => undefined });
+    const view = new LibraryView(context, undefined, undefined, { newPrompt: () => void noFolder(), deletePrompt: async () => undefined, setShow: async () => undefined });
     context.subscriptions.push(view, vscode.window.registerWebviewViewProvider(LIBRARY_VIEW_ID, view));
-    for (const id of ['newPrompt', 'focusSearch', 'revealFolder', 'revealFolderInFinder', 'collapseAll', 'showAllMonths', 'hideOlderMonths', 'newTextFile']) {
+    for (const id of ['newPrompt', 'focusSearch', 'revealFolder', 'revealFolderInFinder', 'collapseAll', 'showToday', 'showThisMonth', 'showAllMonths', 'newTextFile']) {
       context.subscriptions.push(vscode.commands.registerCommand(`promptComposer.${id}`, () =>
         id === 'newTextFile' ? vscode.commands.executeCommand('workbench.action.files.newUntitledFile') : noFolder()));
     }
@@ -60,7 +61,7 @@ export function activate(context: vscode.ExtensionContext): PromptComposerApi | 
     onActiveChanged: (doc) => statusBar.show(doc?.stats),
   });
   const untitled = new UntitledSwap(editors);
-  const actions = { newPrompt: () => void editors.newPrompt(), deletePrompt: (id: string) => deletePrompt(id) };
+  const actions = { newPrompt: () => void editors.newPrompt(), deletePrompt: (id: string) => deletePrompt(id), setShow: (show: PanelShow) => setShow(show) };
   const libraryView = new LibraryView(context, library, editors, actions);
   context.subscriptions.push(library, index, editors, untitled, libraryView);
   context.subscriptions.push(
@@ -81,11 +82,12 @@ export function activate(context: vscode.ExtensionContext): PromptComposerApi | 
     const doc = editors.activeDoc;
     return doc ? doc.rel ?? `doc:${doc.id}` : undefined;
   };
-  const setShowAll = async (value: boolean) => {
+  /** The panel's ⋯ choice is a user setting (a workspace setting only if one is already there). */
+  async function setShow(show: PanelShow): Promise<void> {
     const c = config();
-    const target = c.inspect('panel.showAllMonths')?.workspaceValue !== undefined ? vscode.ConfigurationTarget.Workspace : vscode.ConfigurationTarget.Global;
-    await c.update('panel.showAllMonths', value, target);
-  };
+    const target = c.inspect('panel.show')?.workspaceValue !== undefined ? vscode.ConfigurationTarget.Workspace : vscode.ConfigurationTarget.Global;
+    await c.update('panel.show', show, target);
+  }
 
   async function deletePrompt(id: string, opts: { confirm?: boolean; deleteImages?: boolean } = {}): Promise<void> {
     const confirm = opts.confirm ?? true;
@@ -136,8 +138,9 @@ export function activate(context: vscode.ExtensionContext): PromptComposerApi | 
   const reg = (id: string, fn: (...args: any[]) => unknown) => context.subscriptions.push(vscode.commands.registerCommand(`promptComposer.${id}`, fn));
   reg('newPrompt', () => editors.newPrompt());
   reg('collapseAll', () => libraryView.collapseAll());
-  reg('showAllMonths', () => setShowAll(true));
-  reg('hideOlderMonths', () => setShowAll(false));
+  reg('showToday', () => setShow('today'));
+  reg('showThisMonth', () => setShow('month'));
+  reg('showAllMonths', () => setShow('all'));
   reg('focusSearch', () => libraryView.focusSearch());
   const shell = { reveal: (uri: vscode.Uri): Thenable<unknown> => vscode.commands.executeCommand('revealFileInOS', uri) };
   // The file manager opens inside the folder, on the newest month (Finder hides dot-folders, so selecting

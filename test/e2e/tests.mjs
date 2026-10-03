@@ -560,7 +560,7 @@ export const tests = [
       const rowA = lib(vsc).locator('.lrow.prompt', { hasText: 'Preview A' });
       const rowB = lib(vsc).locator('.lrow.prompt', { hasText: 'Preview B' });
       await rowA.waitFor({ timeout: 8000 });
-      assert.ok(await lib(vsc).locator('.lrow.day', { hasText: 'Today' }).count());
+      assert.ok(await lib(vsc).locator('.lrow.grp', { hasText: 'Today' }).count());
       await rowA.click();
       await vsc.waitFor(async () => (await tabLabel(vsc)) === 'Preview A', 5000, 'A in preview');
       await rowB.click();
@@ -574,23 +574,55 @@ export const tests = [
     },
   },
   {
-    name: 'PN-03 PN-04 older months are hidden until Show All Months',
+    name: 'PN-03 PN-04 the panel shows today by default; ⋯ and the hint links show this month or all months',
     async fn({ vsc, shot }) {
       await vsc.openPanel();
       const old = new Date(today.getFullYear(), today.getMonth() - 2, 5, 9, 30);
       const om = `${old.getFullYear()}-${pad(old.getMonth() + 1)}`;
       mkdirSync(join(vsc.ws, '.prompt-composer', om), { recursive: true });
       writeFileSync(join(vsc.ws, '.prompt-composer', om, '05-0930-split-routes.md'), '# Split routes\n\n@src/server/routes.ts is too long\n');
-      await lib(vsc).locator('.lib-empty-hint', { hasText: 'Older months are hidden' }).waitFor({ timeout: 8000 });
-      const label = old.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase();
-      assert.equal(await lib(vsc).locator('.lrow.grp', { hasText: new RegExp(label, 'i') }).count(), 0);
+      // an earlier day this month (none on the 1st)
+      const earlier = today.getDate() > 1 ? `${monthKey}/${pad(today.getDate() - 1)}-1200-earlier-this-month.md` : undefined;
+      if (earlier) writeFileSync(join(vsc.ws, '.prompt-composer', ...earlier.split('/')), '# Earlier this month\n');
+      const monthName = (d) => new RegExp(d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }), 'i');
+      const oldGroup = lib(vsc).locator('.lrow.grp', { hasText: monthName(old) });
+      const thisGroup = lib(vsc).locator('.lrow.grp', { hasText: monthName(today) });
+      const earlierRow = lib(vsc).locator('.lrow.prompt', { hasText: 'Earlier this month' });
+
+      // default: Pinned and Today only, Today as a top-level group
+      const hint = lib(vsc).locator('.lib-empty-hint', { hasText: 'Earlier prompts are hidden' });
+      await hint.waitFor({ timeout: 8000 });
+      await lib(vsc).locator('.lrow.grp', { hasText: 'Today' }).waitFor({ timeout: 5000 });
+      assert.equal(await thisGroup.count(), 0, 'no month header');
+      assert.equal(await oldGroup.count(), 0, 'older month hidden');
+      if (earlier) assert.equal(await earlierRow.count(), 0, 'earlier day hidden');
+      await shot('today');
+
+      // the ⋯ menu offers the other two
+      await vsc.page.locator('.part.sidebar .title-actions .codicon-toolbar-more').first().click();
+      const menu = vsc.page.locator('.context-view .monaco-menu');
+      await menu.waitFor({ timeout: 5000 });
+      const labels = (await menu.locator('.action-label').allInnerTexts()).map((l) => l.trim()).filter(Boolean);
+      await shot('menu');
+      await vsc.page.keyboard.press('Escape');
+      assert.ok(labels.includes('Show This Month') && labels.includes('Show All Months') && !labels.includes('Show Today Only'), `menu: ${labels}`);
+
+      // the hint's link switches to this month
+      await hint.locator('a', { hasText: 'Show this month' }).click();
+      await thisGroup.waitFor({ timeout: 5000 });
+      if (earlier) await earlierRow.waitFor({ timeout: 5000 });
+      assert.equal(await oldGroup.count(), 0, 'older month still hidden');
+      await lib(vsc).locator('.lib-empty-hint', { hasText: 'Older months are hidden' }).waitFor({ timeout: 5000 });
+      await shot('month');
+
       await vsc.command('promptComposer.showAllMonths');
-      const grp = lib(vsc).locator('.lrow.grp', { hasText: new RegExp(label, 'i') });
-      await grp.waitFor({ timeout: 5000 });
-      assert.match(await grp.locator('.twistie').getAttribute('class'), /chevron-right/, 'older month starts folded');
+      await oldGroup.waitFor({ timeout: 5000 });
+      assert.match(await oldGroup.locator('.twistie').getAttribute('class'), /chevron-right/, 'older month starts folded');
       await shot('all-months');
-      await vsc.command('promptComposer.hideOlderMonths');
-      await vsc.waitFor(async () => (await grp.count()) === 0, 5000, 'hidden again');
+
+      await vsc.command('promptComposer.showToday');
+      await vsc.waitFor(async () => (await oldGroup.count()) === 0 && (await thisGroup.count()) === 0, 5000, 'back to today');
+      await setting(vsc, 'promptComposer', 'panel.show', undefined);
     },
   },
   {
