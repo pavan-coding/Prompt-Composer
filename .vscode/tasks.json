@@ -1,0 +1,32 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Prepare sample workspace and build",
+      "type": "shell",
+      "command": "node scripts/prepare-dev.mjs",
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "type": "npm",
+      "script": "build",
+      "label": "npm: build",
+      "problemMatcher": [],
+      "group": { "kind": "build", "isDefault": true }
+    },
+    {
+      "type": "npm",
+      "script": "watch",
+      "label": "npm: watch",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "Build tests",
+      "type": "shell",
+      "command": "node esbuild.mjs && node esbuild.mjs --tests",
+      "problemMatcher": []
+    }
+  ]
+}

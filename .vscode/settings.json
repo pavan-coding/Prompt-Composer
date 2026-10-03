@@ -1,0 +1,6 @@
+{
+  // sample-workspace/ (made for F5 runs) contains a junction loop on purpose; keep VS Code from watching it.
+  "files.watcherExclude": { "**/sample-workspace/**": true, "**/.vscode-test/**": true },
+  "search.exclude": { "**/sample-workspace": true, "**/dist": true, "**/.vscode-test": true },
+  "files.exclude": { "**/.vscode-test": true }
+}

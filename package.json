@@ -1,0 +1,636 @@
+{
+  "name": "prompt-composer",
+  "displayName": "Prompt Composer",
+  "description": "Write prompts for Claude Code in a rich Markdown editor, with @ file mentions, images and a searchable prompt library.",
+  "version": "0.1.0",
+  "publisher": "pavan-coding",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pavan-coding/Prompt-Composer.git"
+  },
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "prompt",
+    "claude",
+    "claude code",
+    "markdown",
+    "tiptap"
+  ],
+  "main": "./dist/extension.js",
+  "extensionKind": [
+    "workspace"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "promptComposer",
+          "title": "Prompt Composer",
+          "icon": "media/activity-bar.svg"
+        }
+      ]
+    },
+    "views": {
+      "promptComposer": [
+        {
+          "type": "webview",
+          "id": "promptComposer.library",
+          "name": "Prompts"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "promptComposer.newPrompt",
+        "title": "New Prompt",
+        "category": "Prompt Composer",
+        "icon": "$(new-file)"
+      },
+      {
+        "command": "promptComposer.collapseAll",
+        "title": "Collapse All",
+        "category": "Prompt Composer",
+        "icon": "$(collapse-all)"
+      },
+      {
+        "command": "promptComposer.showAllMonths",
+        "title": "Show All Months",
+        "category": "Prompt Composer"
+      },
+      {
+        "command": "promptComposer.hideOlderMonths",
+        "title": "Show Current Month Only",
+        "category": "Prompt Composer"
+      },
+      {
+        "command": "promptComposer.revealFolder",
+        "title": "Reveal Prompts Folder in Explorer",
+        "category": "Prompt Composer"
+      },
+      {
+        "command": "promptComposer.focusSearch",
+        "title": "Search Prompts",
+        "category": "Prompt Composer"
+      },
+      {
+        "command": "promptComposer.open",
+        "title": "Open",
+        "category": "Prompt Composer"
+      },
+      {
+        "command": "promptComposer.openToSide",
+        "title": "Open to the Side",
+        "category": "Prompt Composer"
+      },
+      {
+        "command": "promptComposer.copyAsPrompt",
+        "title": "Copy as Prompt",
+        "category": "Prompt Composer",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "promptComposer.copyPath",
+        "title": "Copy @Path for Claude",
+        "category": "Prompt Composer"
+      },
+      {
+        "command": "promptComposer.pin",
+        "title": "Pin",
+        "category": "Prompt Composer"
+      },
+      {
+        "command": "promptComposer.unpin",
+        "title": "Unpin",
+        "category": "Prompt Composer"
+      },
+      {
+        "command": "promptComposer.duplicate",
+        "title": "Duplicate",
+        "category": "Prompt Composer"
+      },
+      {
+        "command": "promptComposer.revealInExplorer",
+        "title": "Reveal in Explorer",
+        "category": "Prompt Composer"
+      },
+      {
+        "command": "promptComposer.delete",
+        "title": "Delete",
+        "category": "Prompt Composer"
+      },
+      {
+        "command": "promptComposer.save",
+        "title": "Save Prompt",
+        "category": "Prompt Composer"
+      },
+      {
+        "command": "promptComposer.revert",
+        "title": "Revert Prompt",
+        "category": "Prompt Composer"
+      },
+      {
+        "command": "promptComposer.openAsText",
+        "title": "Open as Text",
+        "category": "Prompt Composer",
+        "icon": "$(go-to-file)"
+      },
+      {
+        "command": "promptComposer.insertImage",
+        "title": "Insert Image…",
+        "category": "Prompt Composer"
+      },
+      {
+        "command": "promptComposer.goToBrokenMention",
+        "title": "Go to Broken Mention",
+        "category": "Prompt Composer"
+      },
+      {
+        "command": "promptComposer.newTextFile",
+        "title": "New Text File",
+        "category": "Prompt Composer"
+      },
+      {
+        "command": "promptComposer.insertLink",
+        "title": "Insert Link…",
+        "category": "Prompt Composer"
+      },
+      {
+        "command": "promptComposer.noop",
+        "title": "Editor Shortcut",
+        "category": "Prompt Composer"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "promptComposer.newPrompt",
+          "when": "view == promptComposer.library",
+          "group": "navigation@1"
+        },
+        {
+          "command": "promptComposer.collapseAll",
+          "when": "view == promptComposer.library",
+          "group": "navigation@2"
+        },
+        {
+          "command": "promptComposer.showAllMonths",
+          "when": "view == promptComposer.library && !config.promptComposer.panel.showAllMonths",
+          "group": "1_months@1"
+        },
+        {
+          "command": "promptComposer.hideOlderMonths",
+          "when": "view == promptComposer.library && config.promptComposer.panel.showAllMonths",
+          "group": "1_months@1"
+        },
+        {
+          "command": "promptComposer.revealFolder",
+          "when": "view == promptComposer.library",
+          "group": "2_folder@1"
+        }
+      ],
+      "webview/context": [
+        {
+          "command": "promptComposer.open",
+          "when": "webviewId == 'promptComposer.library' && webviewSection == 'prompt'",
+          "group": "1_open@1"
+        },
+        {
+          "command": "promptComposer.openToSide",
+          "when": "webviewId == 'promptComposer.library' && webviewSection == 'prompt'",
+          "group": "1_open@2"
+        },
+        {
+          "command": "promptComposer.copyAsPrompt",
+          "when": "webviewId == 'promptComposer.library' && webviewSection == 'prompt'",
+          "group": "2_copy@1"
+        },
+        {
+          "command": "promptComposer.copyPath",
+          "when": "webviewId == 'promptComposer.library' && webviewSection == 'prompt' && promptSaved",
+          "group": "2_copy@2"
+        },
+        {
+          "command": "promptComposer.pin",
+          "when": "webviewId == 'promptComposer.library' && webviewSection == 'prompt' && promptSaved && !promptPinned",
+          "group": "3_manage@1"
+        },
+        {
+          "command": "promptComposer.unpin",
+          "when": "webviewId == 'promptComposer.library' && webviewSection == 'prompt' && promptPinned",
+          "group": "3_manage@1"
+        },
+        {
+          "command": "promptComposer.duplicate",
+          "when": "webviewId == 'promptComposer.library' && webviewSection == 'prompt' && promptSaved",
+          "group": "3_manage@2"
+        },
+        {
+          "command": "promptComposer.revealInExplorer",
+          "when": "webviewId == 'promptComposer.library' && webviewSection == 'prompt' && promptSaved",
+          "group": "3_manage@3"
+        },
+        {
+          "command": "promptComposer.delete",
+          "when": "webviewId == 'promptComposer.library' && webviewSection == 'prompt'",
+          "group": "4_delete@1"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "promptComposer.copyAsPrompt",
+          "when": "activeWebviewPanelId == 'promptComposer.editor'",
+          "group": "navigation@1"
+        },
+        {
+          "command": "promptComposer.openAsText",
+          "when": "activeWebviewPanelId == 'promptComposer.editor' && promptComposer.activeSaved",
+          "group": "navigation@2"
+        },
+        {
+          "command": "promptComposer.revert",
+          "when": "activeWebviewPanelId == 'promptComposer.editor'",
+          "group": "1_file@1"
+        },
+        {
+          "command": "promptComposer.insertImage",
+          "when": "activeWebviewPanelId == 'promptComposer.editor'",
+          "group": "2_insert@1"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "promptComposer.open",
+          "when": "false"
+        },
+        {
+          "command": "promptComposer.openToSide",
+          "when": "false"
+        },
+        {
+          "command": "promptComposer.copyPath",
+          "when": "false"
+        },
+        {
+          "command": "promptComposer.pin",
+          "when": "false"
+        },
+        {
+          "command": "promptComposer.unpin",
+          "when": "false"
+        },
+        {
+          "command": "promptComposer.duplicate",
+          "when": "false"
+        },
+        {
+          "command": "promptComposer.revealInExplorer",
+          "when": "false"
+        },
+        {
+          "command": "promptComposer.delete",
+          "when": "false"
+        },
+        {
+          "command": "promptComposer.newTextFile",
+          "when": "false"
+        },
+        {
+          "command": "promptComposer.collapseAll",
+          "when": "false"
+        },
+        {
+          "command": "promptComposer.copyAsPrompt",
+          "when": "activeWebviewPanelId == 'promptComposer.editor'"
+        },
+        {
+          "command": "promptComposer.save",
+          "when": "activeWebviewPanelId == 'promptComposer.editor'"
+        },
+        {
+          "command": "promptComposer.revert",
+          "when": "activeWebviewPanelId == 'promptComposer.editor'"
+        },
+        {
+          "command": "promptComposer.openAsText",
+          "when": "activeWebviewPanelId == 'promptComposer.editor'"
+        },
+        {
+          "command": "promptComposer.insertImage",
+          "when": "activeWebviewPanelId == 'promptComposer.editor'"
+        },
+        {
+          "command": "promptComposer.goToBrokenMention",
+          "when": "activeWebviewPanelId == 'promptComposer.editor'"
+        },
+        {
+          "command": "promptComposer.noop",
+          "when": "false"
+        },
+        {
+          "command": "promptComposer.insertLink",
+          "when": "activeWebviewPanelId == 'promptComposer.editor'"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "promptComposer.save",
+        "key": "ctrl+s",
+        "mac": "cmd+s",
+        "when": "activeWebviewPanelId == 'promptComposer.editor'"
+      },
+      {
+        "command": "promptComposer.newTextFile",
+        "key": "ctrl+n",
+        "mac": "cmd+n",
+        "when": "config.promptComposer.untitledFiles == 'doubleClick' && !terminalFocus"
+      },
+      {
+        "command": "promptComposer.insertLink",
+        "key": "ctrl+k",
+        "mac": "cmd+k",
+        "when": "promptComposer.editorFocused && activeWebviewPanelId == 'promptComposer.editor'"
+      },
+      {
+        "command": "promptComposer.noop",
+        "key": "ctrl+b",
+        "mac": "cmd+b",
+        "when": "promptComposer.editorFocused && activeWebviewPanelId == 'promptComposer.editor'"
+      },
+      {
+        "command": "promptComposer.noop",
+        "key": "ctrl+i",
+        "mac": "cmd+i",
+        "when": "promptComposer.editorFocused && activeWebviewPanelId == 'promptComposer.editor'"
+      },
+      {
+        "command": "promptComposer.noop",
+        "key": "ctrl+e",
+        "mac": "cmd+e",
+        "when": "promptComposer.editorFocused && activeWebviewPanelId == 'promptComposer.editor'"
+      },
+      {
+        "command": "promptComposer.noop",
+        "key": "ctrl+shift+s",
+        "mac": "cmd+shift+s",
+        "when": "promptComposer.editorFocused && activeWebviewPanelId == 'promptComposer.editor'"
+      },
+      {
+        "command": "promptComposer.noop",
+        "key": "ctrl+shift+b",
+        "mac": "cmd+shift+b",
+        "when": "promptComposer.editorFocused && activeWebviewPanelId == 'promptComposer.editor'"
+      },
+      {
+        "command": "promptComposer.noop",
+        "key": "ctrl+shift+7",
+        "mac": "cmd+shift+7",
+        "when": "promptComposer.editorFocused && activeWebviewPanelId == 'promptComposer.editor'"
+      },
+      {
+        "command": "promptComposer.noop",
+        "key": "ctrl+shift+8",
+        "mac": "cmd+shift+8",
+        "when": "promptComposer.editorFocused && activeWebviewPanelId == 'promptComposer.editor'"
+      },
+      {
+        "command": "promptComposer.noop",
+        "key": "ctrl+shift+9",
+        "mac": "cmd+shift+9",
+        "when": "promptComposer.editorFocused && activeWebviewPanelId == 'promptComposer.editor'"
+      },
+      {
+        "command": "promptComposer.noop",
+        "key": "ctrl+alt+c",
+        "mac": "cmd+alt+c",
+        "when": "promptComposer.editorFocused && activeWebviewPanelId == 'promptComposer.editor'"
+      },
+      {
+        "command": "promptComposer.noop",
+        "key": "ctrl+alt+0",
+        "mac": "cmd+alt+0",
+        "when": "promptComposer.editorFocused && activeWebviewPanelId == 'promptComposer.editor'"
+      },
+      {
+        "command": "promptComposer.noop",
+        "key": "ctrl+alt+1",
+        "mac": "cmd+alt+1",
+        "when": "promptComposer.editorFocused && activeWebviewPanelId == 'promptComposer.editor'"
+      },
+      {
+        "command": "promptComposer.noop",
+        "key": "ctrl+alt+2",
+        "mac": "cmd+alt+2",
+        "when": "promptComposer.editorFocused && activeWebviewPanelId == 'promptComposer.editor'"
+      },
+      {
+        "command": "promptComposer.noop",
+        "key": "ctrl+alt+3",
+        "mac": "cmd+alt+3",
+        "when": "promptComposer.editorFocused && activeWebviewPanelId == 'promptComposer.editor'"
+      },
+      {
+        "command": "promptComposer.noop",
+        "key": "ctrl+alt+4",
+        "mac": "cmd+alt+4",
+        "when": "promptComposer.editorFocused && activeWebviewPanelId == 'promptComposer.editor'"
+      },
+      {
+        "command": "promptComposer.noop",
+        "key": "ctrl+alt+5",
+        "mac": "cmd+alt+5",
+        "when": "promptComposer.editorFocused && activeWebviewPanelId == 'promptComposer.editor'"
+      },
+      {
+        "command": "promptComposer.noop",
+        "key": "ctrl+alt+6",
+        "mac": "cmd+alt+6",
+        "when": "promptComposer.editorFocused && activeWebviewPanelId == 'promptComposer.editor'"
+      }
+    ],
+    "customEditors": [
+      {
+        "viewType": "promptComposer.redirect",
+        "displayName": "Prompt Composer",
+        "selector": [
+          {
+            "filenamePattern": "**/.prompt-composer/*/*.md"
+          }
+        ],
+        "priority": "default"
+      }
+    ],
+    "configuration": {
+      "title": "Prompt Composer",
+      "properties": {
+        "promptComposer.editor.colors": {
+          "type": "string",
+          "enum": [
+            "theme",
+            "tiptap"
+          ],
+          "enumDescriptions": [
+            "Use the colours of your VS Code theme.",
+            "Use Tiptap's own palette."
+          ],
+          "default": "theme",
+          "description": "Colours of the prompt editor."
+        },
+        "promptComposer.mentions.style": {
+          "type": "string",
+          "enum": [
+            "icon",
+            "at",
+            "plain"
+          ],
+          "enumDescriptions": [
+            "A pill with the file or folder icon and its name.",
+            "A pill showing @name.",
+            "Plain @name text with no pill."
+          ],
+          "default": "icon",
+          "description": "How @ mentions of files and folders look in the editor. The file always stores the full path."
+        },
+        "promptComposer.toolbar": {
+          "type": "string",
+          "enum": [
+            "mid",
+            "full",
+            "off"
+          ],
+          "enumDescriptions": [
+            "A centered, rounded bar about as wide as its buttons.",
+            "A full-width strip.",
+            "No toolbar (the bubble menu and / commands are still there)."
+          ],
+          "default": "mid",
+          "description": "The formatting toolbar at the top of the prompt editor."
+        },
+        "promptComposer.editor.width": {
+          "type": "string",
+          "enum": [
+            "full",
+            "readable"
+          ],
+          "enumDescriptions": [
+            "Use the whole width of the editor.",
+            "Keep text in a 648px column."
+          ],
+          "default": "full",
+          "description": "Width of the text in the prompt editor."
+        },
+        "promptComposer.caret": {
+          "type": "string",
+          "enum": [
+            "smooth",
+            "native"
+          ],
+          "enumDescriptions": [
+            "A drawn caret that glides between positions and blinks by expanding, like VS Code's smooth caret.",
+            "The browser's normal caret."
+          ],
+          "default": "smooth",
+          "description": "Caret style in the prompt editor."
+        },
+        "promptComposer.lineNumbers": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show line numbers in the prompt editor. They count the lines you see: a wrapped paragraph takes one number per line."
+        },
+        "promptComposer.panel.showAllMonths": {
+          "type": "boolean",
+          "default": false,
+          "description": "List every month in the Prompts panel. When off, only Pinned and the current month are listed; search still covers every month."
+        },
+        "promptComposer.untitledFiles": {
+          "type": "string",
+          "enum": [
+            "doubleClick",
+            "always",
+            "off"
+          ],
+          "enumDescriptions": [
+            "Double-clicking empty space in the tab bar or an empty editor area starts a new prompt. Ctrl+N still makes a text file.",
+            "Every new empty Untitled file becomes a prompt, including Ctrl+N.",
+            "Never replace Untitled files."
+          ],
+          "default": "doubleClick",
+          "description": "Turn VS Code's new empty Untitled files into prompts."
+        },
+        "promptComposer.gitignore": {
+          "type": "boolean",
+          "default": true,
+          "description": "Write .prompt-composer/.gitignore (containing *) so git ignores the prompts folder."
+        },
+        "promptComposer.mentions.exclude": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "**/.git",
+            "**/node_modules"
+          ],
+          "description": "Glob patterns left out of @ mention suggestions, in addition to files.exclude."
+        },
+        "promptComposer.mentions.maxEntries": {
+          "type": "number",
+          "default": 200000,
+          "minimum": 1000,
+          "description": "The most files and folders the @ mention index will hold."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p src/webview/tsconfig.json --noEmit",
+    "test:unit": "vitest run",
+    "test:integration": "node esbuild.mjs && node esbuild.mjs --tests && vscode-test",
+    "test:e2e": "node esbuild.mjs && node test/e2e/run.mjs",
+    "test": "npm run test:unit && npm run test:integration && npm run test:e2e",
+    "package": "node esbuild.mjs --production && vsce package --no-dependencies --allow-missing-repository --skip-license",
+    "vscode:prepublish": "node esbuild.mjs --production"
+  },
+  "devDependencies": {
+    "@fontsource-variable/dm-sans": "5.3.0",
+    "@fontsource-variable/inter": "5.3.0",
+    "@tiptap/core": "3.31.4",
+    "@tiptap/extension-bubble-menu": "3.31.4",
+    "@tiptap/extension-code-block-lowlight": "3.31.4",
+    "@tiptap/extension-image": "3.31.4",
+    "@tiptap/extension-list": "3.31.4",
+    "@tiptap/extension-mention": "3.31.4",
+    "@tiptap/extensions": "3.31.4",
+    "@tiptap/pm": "3.31.4",
+    "@tiptap/starter-kit": "3.31.4",
+    "@tiptap/suggestion": "3.31.4",
+    "@types/mocha": "10.0.10",
+    "@types/node": "22.20.5",
+    "@types/picomatch": "4.0.3",
+    "@types/vscode": "1.95.0",
+    "@vscode/codicons": "0.0.36",
+    "@vscode/test-cli": "0.0.15",
+    "@vscode/test-electron": "3.1.0",
+    "@vscode/vsce": "4.0.0",
+    "esbuild": "0.28.2",
+    "jsdom": "30.1.1",
+    "lowlight": "3.3.0",
+    "lucide-static": "1.51.0",
+    "marked": "18.0.14",
+    "mocha": "12.0.3",
+    "picomatch": "4.0.7",
+    "playwright": "1.63.0",
+    "typescript": "7.0.2",
+    "vitest": "5.0.3"
+  }
+}
