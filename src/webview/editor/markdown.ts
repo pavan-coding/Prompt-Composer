@@ -392,7 +392,8 @@ export class MarkdownWriter {
   private node(node: PMNode, level: Level, marker = '-'): string {
     switch (node.type.name) {
       case 'paragraph':
-        return lineStarts(this.inline(node, level), level);
+        // spaces at the end of a line mean nothing in Markdown (two would even be a line break): drop them
+        return lineStarts(this.inline(node, level), level).replace(/[ \t]+$/gm, '');
       case 'heading': {
         const text = this.inline(node, level, true).replace(/\n/g, ' ');
         const body = level >= 1 ? text.replace(/(\s)(#+)\s*$/, (_, s, h) => `${s}\\${h}`) : text;
@@ -643,6 +644,20 @@ function normalize(json: JSONContent): string {
       } else {
         textRun = undefined;
         kids.push(walk(c));
+      }
+    }
+    // Markdown drops spaces at the start and end of each line of a paragraph or heading: ignore them here too
+    if (n.type === 'paragraph' || n.type === 'heading') {
+      const isBreak = (k: unknown) => !!k && (k as { m?: string }).m === undefined && (k as { t?: string }).t === 'hardBreak';
+      for (let i = 0; i < kids.length; i++) {
+        const k = kids[i] as { t: string; m?: string };
+        if (k.m === undefined) continue;
+        if (i === 0 || isBreak(kids[i - 1])) k.t = k.t.replace(/^[ \t]+/, '');
+        if (i === kids.length - 1 || isBreak(kids[i + 1])) k.t = k.t.replace(/[ \t]+$/, '');
+      }
+      for (let i = kids.length - 1; i >= 0; i--) {
+        const k = kids[i] as { t: string; m?: string };
+        if (k.m !== undefined && !k.t) kids.splice(i, 1);
       }
     }
     const a = n.attrs ?? {};

@@ -87,7 +87,7 @@ body.vscode-light #app, body.vscode-high-contrast-light #app {
    ::-webkit-scrollbar styling below), so reset both. */
 html { scrollbar-color: auto; }
 html, body { height: 100%; }
-body { margin: 0; padding: 0; overflow: hidden; background: var(--pc-bg); }
+body { margin: 0; padding: 0; overflow: hidden; background: var(--vscode-editor-background); }
 * { box-sizing: border-box; }
 button { font: inherit; color: inherit; }
 #app {

@@ -227,7 +227,11 @@ export class EditorManager implements vscode.Disposable {
     if (doc?.panel) {
       if (!opts.preview && doc.preview) this.pin(doc);
       doc.panel.reveal(opts.viewColumn ?? doc.panel.viewColumn, !opts.focus && opts.preview);
-      if (opts.focus) this.post(doc, { type: 'focus' });
+      // a tab that's still loading this prompt (a preview just switched to it) takes focus once it's ready
+      if (opts.focus) {
+        if (doc.loaded) this.post(doc, { type: 'focus' });
+        else doc.focusOnLoad = true;
+      }
       return doc;
     }
     if (!doc) {
@@ -414,7 +418,13 @@ export class EditorManager implements vscode.Disposable {
         doc.current = m.markdown;
         doc.title = m.title;
         doc.stats = m.stats;
-        if (!doc.loaded) doc.markLoaded();
+        if (!doc.loaded) {
+          doc.markLoaded();
+          if (doc.focusOnLoad) {
+            doc.focusOnLoad = false;
+            this.post(doc, { type: 'focus', at: 'end' });
+          }
+        }
         if (doc.dirty && doc.preview) this.pin(doc);
         if (oldTitle !== doc.title || wasDirty !== doc.dirty) this.updateTab(doc);
         if (doc === this.active) this.deps.onActiveChanged(doc);

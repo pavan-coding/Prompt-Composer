@@ -28,6 +28,13 @@ export function startTestBridge(api: PromptComposerApi, port: number, log: vscod
         else if (req.method === 'POST' && req.url === '/config') {
           await vscode.workspace.getConfiguration(input.section).update(input.key, input.value, vscode.ConfigurationTarget.Global);
           out = true;
+        } else if (req.method === 'POST' && req.url === '/openFile') {
+          await vscode.commands.executeCommand('vscode.open', vscode.Uri.file(input.path));
+          out = true;
+        } else if (req.method === 'POST' && req.url === '/focus') {
+          const d = api.editors.activeDoc;
+          if (d) api.editors.post(d, { type: 'focus', at: input.at });
+          out = !!d;
         } else if (req.method === 'POST' && req.url === '/open') {
           out = !!(await api.editors.open(input.rel, { focus: true }));
         } else {

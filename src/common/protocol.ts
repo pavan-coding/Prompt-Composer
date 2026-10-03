@@ -75,7 +75,7 @@ export type HostToEditor =
   | { type: 'imageSaved'; requestId: number; path?: string; error?: string }
   | { type: 'insertImages'; paths: string[] }
   | { type: 'linkResult'; requestId: number; href: string | null }
-  | { type: 'focus' }
+  | { type: 'focus'; at?: 'start' | 'end' }
   | { type: 'goToBroken' }
   | { type: 'state'; state: PersistState }
   | { type: 'command'; name: 'link' };

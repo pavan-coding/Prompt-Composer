@@ -42,6 +42,8 @@ let writer: MarkdownWriter | undefined;
 /** The file as loaded and how it serializes: until the user edits, report the file's exact text, so opening never changes it. */
 let baseline = { original: '', serialized: '' };
 let resizeObserver: ResizeObserver | undefined;
+/** A focus request that arrived before the editor existed. */
+let pendingFocus: 'start' | 'end' | null | undefined;
 const bubbleEl = $('#bubble');
 const mentionInfo = new Map<string, MentionInfo>();
 
@@ -729,7 +731,8 @@ const editorRoot = $('#editor');
 const HOVERABLE = '.mention, img, a[href]';
 editorRoot.addEventListener('mouseover', (ev) => {
   const el = (ev.target as HTMLElement).closest<HTMLElement>(HOVERABLE);
-  if (!el || picker.open) return;
+  // not while a menu or a selection (and its bubble menu) is showing
+  if (!el || picker.open || (editor && editor.state.selection instanceof TextSelection && !editor.state.selection.empty)) return;
   window.clearTimeout(hoverTimer);
   hoverTimer = window.setTimeout(() => showHoverFor(el), 350);
 });
@@ -1098,7 +1101,8 @@ window.addEventListener('message', (ev: MessageEvent<HostToEditor>) => {
       applySettings(m.init.settings);
       createEditor(m.init.markdown);
       vscode.setState({ ...persist, markdown: lastSent });
-      if (m.init.focus) editor?.commands.focus('end');
+      if (m.init.focus || pendingFocus !== undefined) editor?.commands.focus(pendingFocus ?? 'end');
+      pendingFocus = undefined;
       return;
     }
     case 'settings':
@@ -1144,7 +1148,8 @@ window.addEventListener('message', (ev: MessageEvent<HostToEditor>) => {
       linkWaiters.delete(m.requestId);
       return;
     case 'focus':
-      editor?.commands.focus();
+      if (editor) editor.commands.focus(m.at ?? null);
+      else pendingFocus = m.at ?? null;
       return;
     case 'goToBroken':
       goToBroken();
