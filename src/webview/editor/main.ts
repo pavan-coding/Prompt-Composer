@@ -717,7 +717,7 @@ function showHoverFor(el: HTMLElement): void {
     html += `<div class="hc-title"><span class="ic i-link"></span>${esc(el.textContent ?? '')}</div><div class="hc-path">${esc(href)}</div><div class="hc-foot">Follow link (${mod} + click)</div>`;
   } else {
     const p = el.dataset.path ?? el.getAttribute('src') ?? '';
-    html += `<div class="hc-title"><span class="ic i-file-image"></span>${esc(decodeURIComponent(p.split('/').pop() ?? ''))}</div><div class="hc-path">${esc(p)}</div><div class="hc-foot">Double-click to open full size</div>`;
+    html += `<div class="hc-title"><span class="ic i-file-image"></span>${esc(decodeURIComponent(p.split('/').pop() ?? ''))}</div><div class="hc-path">${esc(p)}</div><div class="hc-foot">Click to zoom</div>`;
   }
   hoverEl.innerHTML = html;
   hoverEl.classList.add('show');
@@ -746,10 +746,87 @@ editorRoot.addEventListener('click', (ev) => {
   const el = (ev.target as HTMLElement).closest<HTMLElement>('.mention');
   if (el?.dataset.path) { hideHover(); post({ type: 'openMention', path: el.dataset.path }); }
 });
-editorRoot.addEventListener('dblclick', (ev) => {
-  const img = (ev.target as HTMLElement).closest<HTMLElement>('img');
-  if (img) post({ type: 'openImage', path: img.dataset.path ?? img.getAttribute('src') ?? '' });
+editorRoot.addEventListener('click', (ev) => {
+  if (ev.ctrlKey || ev.metaKey || ev.button !== 0) return;
+  const img = (ev.target as HTMLElement).closest<HTMLImageElement>('.ProseMirror img');
+  if (img?.complete && img.naturalWidth) openViewer(img);
 });
+
+// ------------------------------------------------------------------------------------------- image viewer
+// Click an image to see it larger: zoom with the buttons or the scroll wheel, drag to move, Esc or ✕ to close.
+const iv = $('#imgView');
+const ivScroll = $('#ivScroll');
+const ivImg = $<HTMLImageElement>('#ivImg');
+const ivPct = $('#ivPct');
+let ivScale = 1;
+/** Resize to `scale`, keeping the image point under `at` (client coordinates) where it is; no `at`: just resize. */
+function ivZoom(scale: number, at?: { x: number; y: number }): void {
+  const before = ivImg.getBoundingClientRect();
+  ivScale = Math.min(8, Math.max(0.05, scale));
+  ivImg.style.width = `${ivImg.naturalWidth * ivScale}px`;
+  ivImg.style.height = `${ivImg.naturalHeight * ivScale}px`;
+  ivPct.textContent = `${Math.round(ivScale * 100)}%`;
+  if (!at || !before.width) return;
+  const after = ivImg.getBoundingClientRect();
+  ivScroll.scrollLeft += after.left + ((at.x - before.left) / before.width) * after.width - at.x;
+  ivScroll.scrollTop += after.top + ((at.y - before.top) / before.height) * after.height - at.y;
+}
+const ivCentre = () => { const b = ivScroll.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; };
+function openViewer(img: HTMLImageElement): void {
+  hideHover();
+  iv.hidden = false;
+  ivImg.alt = img.alt;
+  ivImg.style.visibility = 'hidden'; // until it's fitted, so it never flashes at full size
+  ivPct.textContent = '';
+  ivImg.onload = () => {
+    // fit the window (never enlarge past 100%), centred
+    ivZoom(Math.min(1, (ivScroll.clientWidth - 48) / ivImg.naturalWidth, (ivScroll.clientHeight - 96) / ivImg.naturalHeight));
+    ivImg.style.visibility = '';
+  };
+  ivImg.src = img.currentSrc || img.src;
+  // focus leaves the prompt (typing can't change it behind the viewer); Esc still reaches us
+  iv.focus();
+}
+function closeViewer(): void {
+  if (iv.hidden) return;
+  iv.hidden = true;
+  ivImg.onload = null;
+  ivImg.removeAttribute('src');
+  editor?.commands.focus();
+}
+iv.addEventListener('click', (e) => {
+  const b = (e.target as HTMLElement).closest<HTMLElement>('[data-iv]');
+  if (b?.dataset.iv === 'close') closeViewer();
+  else if (b) ivZoom(ivScale * (b.dataset.iv === 'in' ? 1.25 : 0.8), ivCentre());
+});
+ivScroll.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  ivZoom(ivScale * Math.exp(-e.deltaY * 0.0015), { x: e.clientX, y: e.clientY });
+}, { passive: false });
+let ivDrag: { x: number; y: number; left: number; top: number } | undefined;
+ivScroll.addEventListener('pointerdown', (e) => {
+  const b = ivScroll.getBoundingClientRect();
+  // leave the scrollbars alone
+  if (e.button !== 0 || e.clientX - b.left >= ivScroll.clientWidth || e.clientY - b.top >= ivScroll.clientHeight) return;
+  e.preventDefault();
+  ivDrag = { x: e.clientX, y: e.clientY, left: ivScroll.scrollLeft, top: ivScroll.scrollTop };
+  ivScroll.setPointerCapture(e.pointerId);
+  ivScroll.classList.add('dragging');
+});
+ivScroll.addEventListener('pointermove', (e) => {
+  if (!ivDrag) return;
+  ivScroll.scrollLeft = ivDrag.left - (e.clientX - ivDrag.x);
+  ivScroll.scrollTop = ivDrag.top - (e.clientY - ivDrag.y);
+});
+const ivEndDrag = () => { ivDrag = undefined; ivScroll.classList.remove('dragging'); };
+ivScroll.addEventListener('pointerup', ivEndDrag);
+ivScroll.addEventListener('pointercancel', ivEndDrag);
+window.addEventListener('keydown', (e) => {
+  if (iv.hidden || e.key !== 'Escape') return;
+  e.preventDefault();
+  e.stopImmediatePropagation();
+  closeViewer();
+}, true);
 window.addEventListener('keydown', (e) => { if (e.key === 'Control' || e.key === 'Meta') document.body.classList.add('ctrl'); });
 window.addEventListener('keyup', (e) => { if (e.key === 'Control' || e.key === 'Meta') document.body.classList.remove('ctrl'); });
 window.addEventListener('blur', () => document.body.classList.remove('ctrl'));

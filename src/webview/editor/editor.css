@@ -342,4 +342,18 @@ body.ctrl .ProseMirror a { cursor: pointer; }
 }
 .drop-hint span { margin-top: 16px; padding: 6px 12px; }
 .drop-hint.show { display: flex; }
+
+/* ---------- image viewer: click an image to zoom ---------- */
+.iv { position: fixed; inset: 0; z-index: 60; background: color-mix(in srgb, var(--pc-bg) 94%, transparent); outline: none; }
+.iv[hidden] { display: none; }
+/* margin:auto centres the image while it fits and lets it scroll once it's bigger */
+.iv-scroll { position: absolute; inset: 0; overflow: auto; display: flex; padding: 24px 24px 72px; cursor: grab; }
+.iv-scroll.dragging { cursor: grabbing; }
+/* VS Code's webview styles cap images at max-width/max-height 100%; the viewer sizes the image itself */
+.iv-scroll img { margin: auto; flex: none; max-width: none; max-height: none; border-radius: 2px; user-select: none; }
+.iv-bar {
+  position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 2px; padding: 4px 6px; border-radius: 14px;
+}
+.iv-pct { min-width: 48px; text-align: center; font-size: 12px; color: var(--pc-muted); font-variant-numeric: tabular-nums; }
 .loading { padding: 40px; color: var(--pc-faint); }

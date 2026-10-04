@@ -172,11 +172,12 @@ Totals: 89 unit tests, 52 integration tests, 40 end-to-end tests passed, 1 end-t
 | IM-02 | Drop an image file | Keeps its name; `-1`, `-2` if taken | I | ✅ |
 | IM-03 | Insert Image… | Native file picker; chosen files copied in and inserted | M | 👤 manual (native file picker) |
 | IM-04 | Display | Images render (CSP allows them), at most column width | E | ✅ |
-| IM-05 | Hover and double-click | Hover shows the path; double-click opens the image in VS Code | E | ✅ |
+| IM-05 | Hover | Hover shows the path and "Click to zoom" | E | ✅ |
 | IM-06 | Copy as Prompt | Images become `@.prompt-composer/images/x.png` | U, I | ✅ |
 | IM-07 | Delete a prompt with images | Offers to delete images no other prompt uses | I | ✅ |
 | IM-08 | Discard a new prompt with pasted images | Images added in that session that nothing references are removed | I | ✅ |
 | IM-09 | Shift+drag a file from the Explorer | Inserts an `@` mention | M | 👤 manual (Shift+drag from the Explorer) |
+| IM-10 | Click an image to zoom | Opens a zoom view fitted to the window; − / + and the scroll wheel zoom (by 25% per click); a zoomed image keeps its proportions, scrolls, and can be dragged; ✕ and Esc close it; the prompt is unchanged | E | ✅ |
 
 ## CP: copy, status bar, commands
 

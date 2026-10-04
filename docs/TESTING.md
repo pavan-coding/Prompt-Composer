@@ -143,10 +143,11 @@ This guide is for trying the extension by hand in VS Code's **Extension Developm
 | 1 | Take a screenshot (Win+Shift+S) and paste it into a prompt | It appears inline, and `.prompt-composer/images/YYYY-MM-DD-HHmmss.png` is created | IM-01, IM-04 |
 | 2 | Drag an image file from Windows Explorer into the editor | Saved under its own name (`-1`, `-2` if taken) and shown | IM-02 |
 | 3 | Command Palette → **Prompt Composer: Insert Image…** (or the toolbar image button) | A file picker; the chosen images are copied in and inserted | IM-03 |
-| 4 | Hover an image; double-click it | Its path; then it opens in VS Code's image viewer | IM-05 |
-| 5 | Editor title bar → **Copy as Prompt** (copy icon) | The clipboard has the Markdown with each image as `@.prompt-composer/images/…png` | IM-06, CP-01 |
-| 6 | Paste an image into a *new* prompt, then close it and choose **Don't Save** | The pasted image file is removed | IM-08 |
-| 7 | Hold **Shift** and drag a file from VS Code's Explorer into the editor | It's inserted as an `@` mention | IM-09 |
+| 4 | Hover an image; then click it | Its path and "Click to zoom"; the click opens the zoom view, fitted to the window | IM-05, IM-10 |
+| 5 | In the zoom view: − / +, the scroll wheel, drag, then ✕ or Esc | Zooms out and in (the wheel zooms toward the pointer); dragging moves a zoomed image; ✕ and Esc close it | IM-10 |
+| 6 | Editor title bar → **Copy as Prompt** (copy icon) | The clipboard has the Markdown with each image as `@.prompt-composer/images/…png` | IM-06, CP-01 |
+| 7 | Paste an image into a *new* prompt, then close it and choose **Don't Save** | The pasted image file is removed | IM-08 |
+| 8 | Hold **Shift** and drag a file from VS Code's Explorer into the editor | It's inserted as an `@` mention | IM-09 |
 
 ## 8. Prompt files and other commands
 

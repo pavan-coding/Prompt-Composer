@@ -503,13 +503,6 @@ export class EditorManager implements vscode.Disposable {
         return this.openLink(doc, m.href);
       case 'openMention':
         return this.openWorkspacePath(m.path);
-      case 'openImage': {
-        const ws = this.resolveRelative(doc, m.path);
-        if (ws === undefined) return;
-        if (/^https?:/i.test(m.path)) { void vscode.env.openExternal(vscode.Uri.parse(m.path)); return; }
-        void vscode.commands.executeCommand('vscode.open', vscode.Uri.file(path.join(this.deps.store.workspaceRoot, ...ws.split('/'))), { preview: true });
-        return;
-      }
       case 'focusChanged':
         void vscode.commands.executeCommand('setContext', 'promptComposer.editorFocused', m.focused);
         if (!m.focused && doc.dirty && this.autoSave(doc).mode === 'onFocusChange') void this.save(doc, 'auto');

@@ -19,7 +19,7 @@ const ICONS = [
   'list', 'list-ordered', 'list-todo', 'text-quote', 'square-code', 'bold', 'italic', 'strikethrough', 'code', 'link',
   'image-plus', 'at-sign', 'file', 'folder', 'file-symlink', 'folder-symlink', 'file-text', 'file-code', 'file-json',
   'file-image', 'triangle-alert', 'remove-formatting', 'arrow-right', 'link-2', 'minus', 'grip-vertical', 'arrow-up',
-  'arrow-down', 'copy', 'trash-2', 'check', 'braces',
+  'arrow-down', 'copy', 'trash-2', 'check', 'braces', 'zoom-in', 'zoom-out', 'x',
 ];
 
 function writeIfChanged(file, content) {

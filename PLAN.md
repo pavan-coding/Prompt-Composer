@@ -399,8 +399,8 @@ It excludes `.git`, `node_modules`, VS Code's `files.exclude`, and Prompt Compos
 - **In the editor:**
   - Images render inline, at most the width of the column.
   - Hovering shows the image's path.
-  - Clicking selects the image, and Delete removes it from the prompt.
-  - Double-clicking opens it full size in VS Code's image viewer.
+  - **Clicking opens a zoom view** over the editor: the image starts fitted to the window (never enlarged past 100%). Zoom in and out with the − / + buttons or the scroll wheel (it zooms toward the pointer); drag to move around a zoomed image. ✕ or Esc closes it.
+  - The image stays selected after the zoom view closes, so Delete removes it from the prompt.
 - **Cleanup:** deleting a prompt offers to also delete images that no other prompt uses.
 - **Security:** the webview may only load files from allowed roots: the workspace folders, the symlink targets and `.prompt-composer/`.
 - **No resizing in v1.** Markdown can't store an image size without raw HTML.

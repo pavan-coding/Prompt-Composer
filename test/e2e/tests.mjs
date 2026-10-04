@@ -760,12 +760,13 @@ export const tests = [
     },
   },
   {
-    name: 'IM-01 IM-04 IM-05 pasting a screenshot saves it and shows it',
+    name: 'IM-01 IM-04 IM-05 IM-10 pasting a screenshot saves it and shows it; click zooms it',
     async fn({ vsc, shot }) {
       await newPrompt(vsc);
       await vsc.type('# Paste test');
       await vsc.press('Enter');
-      await vsc.app.evaluate(({ clipboard, nativeImage }, p) => clipboard.writeImage(nativeImage.createFromPath(p)), join(fixtures, 'red.png'));
+      // a real screenshot of the window: bigger than the viewer, so zooming has to scroll
+      await vsc.app.evaluate(async ({ BrowserWindow, clipboard }) => clipboard.writeImage(await BrowserWindow.getAllWindows()[0].webContents.capturePage()));
       await vsc.press('Control+v');
       const img = editor(vsc).locator('img').first();
       await img.waitFor({ timeout: 8000 });
@@ -775,9 +776,53 @@ export const tests = [
       assert.ok(existsSync(join(vsc.ws, '.prompt-composer', 'images', name)), 'file saved');
       await shot('pasted');
       await img.hover();
-      await editor(vsc).locator('#hover').waitFor({ state: 'visible' });
-      await img.dblclick();
-      await waitTab(vsc, name);
+      await editor(vsc).locator('#hover', { hasText: 'Click to zoom' }).waitFor({ state: 'visible' });
+
+      // IM-10: click opens the viewer; buttons and the scroll wheel zoom; ✕ and Esc close it
+      const view = editor(vsc).locator('#imgView');
+      const big = editor(vsc).locator('#ivImg');
+      const pct = async () => parseInt(await editor(vsc).locator('#ivPct').innerText(), 10);
+      const width = () => big.evaluate((el) => el.getBoundingClientRect().width);
+      await img.click();
+      await view.waitFor({ state: 'visible' });
+      await vsc.waitFor(() => big.evaluate((el) => el.style.visibility !== 'hidden' && el.getBoundingClientRect().width > 0), 5000, 'viewer image fitted');
+      const p0 = await pct();
+      assert.ok(p0 < 100, `a big image opens fitted to the window (${p0}%)`);
+      const w0 = await width();
+      await editor(vsc).locator('[data-iv="in"]').click();
+      assert.ok(Math.abs((await pct()) - p0 * 1.25) <= 1, 'zoom in: +25%');
+      assert.ok(Math.abs((await width()) - w0 * 1.25) < 1, 'image grew by 25%');
+      // zoomed past the window: keeps its proportions and scrolls; dragging moves it
+      for (let i = 0; i < 4; i++) await editor(vsc).locator('[data-iv="in"]').click();
+      const [w, h, nw, nh] = await big.evaluate((el) => { const r = el.getBoundingClientRect(); return [r.width, r.height, el.naturalWidth, el.naturalHeight]; });
+      assert.ok(Math.abs(w / h - nw / nh) < 0.01, `aspect ratio kept: ${w}x${h} for ${nw}x${nh}`);
+      const scroller = editor(vsc).locator('#ivScroll');
+      const box = await scroller.boundingBox();
+      const scroll = () => scroller.evaluate((el) => [el.scrollLeft, el.scrollTop]);
+      const [l0, t0] = await scroll();
+      await vsc.page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+      await vsc.page.mouse.down();
+      await vsc.page.mouse.move(box.x + box.width / 2 - 200, box.y + box.height / 2 - 100, { steps: 5 });
+      await vsc.page.mouse.up();
+      const [l1, t1] = await scroll();
+      assert.ok(l1 > l0 && t1 > t0, `drag moved the image: scroll ${l0},${t0} -> ${l1},${t1}`);
+      for (let i = 0; i < 4; i++) await editor(vsc).locator('[data-iv="out"]').click();
+      await editor(vsc).locator('[data-iv="out"]').click();
+      await editor(vsc).locator('[data-iv="out"]').click();
+      assert.ok((await pct()) < p0, 'zoom out');
+      await big.hover();
+      const p1 = await pct();
+      await vsc.page.mouse.wheel(0, -400);
+      await vsc.waitFor(async () => (await pct()) > p1, 3000, 'scroll up zooms in');
+      await shot('viewer');
+      await editor(vsc).locator('[data-iv="close"]').click();
+      await view.waitFor({ state: 'hidden' });
+      await img.click();
+      await view.waitFor({ state: 'visible' });
+      await vsc.press('Escape');
+      await view.waitFor({ state: 'hidden' });
+      // the prompt is unchanged and still has its image
+      assert.equal(await editor(vsc).locator('.ProseMirror img').count(), 1);
     },
   },
   {

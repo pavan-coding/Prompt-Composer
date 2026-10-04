@@ -31,6 +31,16 @@ export const SKELETON = `
 <div class="drop-hint" id="dropHint"><span class="tt-pop" id="dropHintText"></span></div>
 <div class="picker tt-pop" id="picker" role="listbox"><div class="list" id="pickerList"></div><div class="hint"><span>↵ insert</span><span>Tab open folder</span><span>Esc close</span></div></div>
 <div class="hover tt-pop" id="hover"></div>
+<div class="iv" id="imgView" role="dialog" aria-label="Image" tabindex="-1" hidden>
+  <div class="iv-scroll" id="ivScroll"><img id="ivImg" alt="" draggable="false"></div>
+  <div class="iv-bar tt-pop">
+    <button class="tt-btn" data-iv="out" title="Zoom out"><span class="ic i-zoom-out"></span></button>
+    <span class="iv-pct" id="ivPct">100%</span>
+    <button class="tt-btn" data-iv="in" title="Zoom in"><span class="ic i-zoom-in"></span></button>
+    <span class="tt-sep"></span>
+    <button class="tt-btn" data-iv="close" title="Close (Esc)"><span class="ic i-x"></span></button>
+  </div>
+</div>
 <div class="tt-menu tt-pop" id="menu-heading" data-menu="heading">
   <button data-cmd="paragraph"><span class="ic i-pilcrow"></span><span class="lbl">Text</span></button>
   <button data-cmd="h1"><span class="ic i-heading-1"></span><span class="lbl">Heading 1</span><kbd>#</kbd></button>

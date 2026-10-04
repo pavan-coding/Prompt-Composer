@@ -91,7 +91,6 @@ export type EditorToHost =
   | { type: 'askLink'; requestId: number; current: string }
   | { type: 'openLink'; href: string }
   | { type: 'openMention'; path: string }
-  | { type: 'openImage'; path: string }
   | { type: 'focusChanged'; focused: boolean }
   | { type: 'noBroken' }
   | { type: 'log'; level: 'info' | 'warn' | 'error'; message: string };
