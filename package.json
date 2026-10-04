@@ -498,13 +498,21 @@
         "when": "promptComposer.editorFocused && activeWebviewPanelId == 'promptComposer.editor'"
       }
     ],
+    "languages": [
+      {
+        "id": "markdown",
+        "filenamePatterns": [
+          "**/.prompt-composer/*/*.prompt"
+        ]
+      }
+    ],
     "customEditors": [
       {
         "viewType": "promptComposer.redirect",
         "displayName": "Prompt Composer",
         "selector": [
           {
-            "filenamePattern": "**/.prompt-composer/*/*.md"
+            "filenamePattern": "**/.prompt-composer/*/*.prompt"
           }
         ],
         "priority": "default"

@@ -1,4 +1,4 @@
-// Opening .prompt-composer/YYYY-MM/x.md from the Explorer (or anywhere) shows the prompt in the composer.
+// Opening .prompt-composer/YYYY-MM/x.prompt from the Explorer (or anywhere) shows the prompt in the composer.
 // A custom editor registered for exactly those files hands them to the EditorManager and closes itself.
 import * as vscode from 'vscode';
 import type { EditorManager } from './editorManager';

@@ -99,7 +99,7 @@ export type EditorToHost =
 // ---------------------------------------------------------------- library panel
 
 export interface PromptRow {
-  id: string;            // saved: "2026-10/03-1415-x.md"; unsaved: "doc:<docId>"
+  id: string;            // saved: "2026-10/03-1415-x.prompt"; unsaved: "doc:<docId>"
   title: string;
   time: string;          // "14:15"
   date: string;          // "Oct 3"

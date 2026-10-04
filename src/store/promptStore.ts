@@ -1,4 +1,4 @@
-// .prompt-composer/ on disk. Reads only one level deep: YYYY-MM/*.md. Only this extension writes here.
+// .prompt-composer/ on disk. Reads only one level deep: YYYY-MM/*.prompt. Only this extension writes here.
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { randomBytes } from 'node:crypto';
@@ -8,7 +8,7 @@ import {
 } from '../common/naming';
 
 export interface StoredPrompt {
-  /** "2026-10/03-1415-x.md": the id used everywhere, relative to the store folder, with "/" separators. */
+  /** "2026-10/03-1415-x.prompt": the id used everywhere, relative to the store folder, with "/" separators. */
   rel: string;
   abs: string;
   created: Date;
@@ -30,7 +30,7 @@ export class PromptStore {
     return path.join(this.root, ...rel.split('/'));
   }
 
-  /** "2026-10/03-1415-x.md" for an absolute path inside the store's month folders, else undefined. */
+  /** "2026-10/03-1415-x.prompt" for an absolute path inside the store's month folders, else undefined. */
   relOf(abs: string): string | undefined {
     const r = path.relative(this.root, abs);
     if (!r || r.startsWith('..') || path.isAbsolute(r)) return undefined;
@@ -39,12 +39,12 @@ export class PromptStore {
     return parts.join('/');
   }
 
-  /** Workspace-relative path with "/" separators, e.g. ".prompt-composer/2026-10/03-1415-x.md". */
+  /** Workspace-relative path with "/" separators, e.g. ".prompt-composer/2026-10/03-1415-x.prompt". */
   workspaceRel(rel: string): string {
     return `${STORE_DIR}/${rel}`;
   }
 
-  /** Every prompt file: .prompt-composer/YYYY-MM/*.md, one level deep. */
+  /** Every prompt file: .prompt-composer/YYYY-MM/*.prompt, one level deep. */
   async list(): Promise<StoredPrompt[]> {
     let months: string[];
     try {
@@ -99,7 +99,7 @@ export class PromptStore {
   }
 
   /**
-   * Pick the file for a prompt's first save: YYYY-MM/DD-HHmm-<slug>.md from when it was created and its title,
+   * Pick the file for a prompt's first save: YYYY-MM/DD-HHmm-<slug>.prompt from when it was created and its title,
    * with -2, -3… if that name is taken. Creates the folders.
    */
   async allocate(created: Date, title: string): Promise<string> {

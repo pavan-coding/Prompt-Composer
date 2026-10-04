@@ -87,7 +87,7 @@ suite('Storage', () => {
     assert.ok(await api.editors.save(doc));
     assert.equal(fs.readFileSync(path.join(store(), '.gitignore'), 'utf8'), '*\n');
     assert.ok(doc.rel);
-    assert.match(doc.rel!, /^\d{4}-\d{2}\/\d{2}-\d{4}-first-prompt\.md$/);
+    assert.match(doc.rel!, /^\d{4}-\d{2}\/\d{2}-\d{4}-first-prompt\.prompt$/);
     assert.equal(fs.readFileSync(path.join(store(), ...doc.rel!.split('/')), 'utf8'), '# First prompt\n\nHello\n');
   });
 
@@ -119,8 +119,8 @@ suite('Storage', () => {
     const pad = (n: number) => String(n).padStart(2, '0');
     const d = a.created;
     const base = `${d.getFullYear()}-${pad(d.getMonth() + 1)}/${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}-same-title`;
-    assert.equal(a.rel, `${base}.md`);
-    assert.equal(b.rel, `${base}-2.md`);
+    assert.equal(a.rel, `${base}.prompt`);
+    assert.equal(b.rel, `${base}-2.prompt`);
   });
 
   test('ST-07 changing the title after the first save keeps the file name', async () => {
@@ -138,19 +138,21 @@ suite('Storage', () => {
     assert.deepEqual(leftovers, []);
   });
 
-  test('ST-09 the library reads one level deep only', async () => {
+  test('ST-09 ST-17 the library reads one level deep only, and only .prompt files', async () => {
     const month = monthDirs()[0];
     fs.mkdirSync(path.join(store(), month, 'deeper'), { recursive: true });
-    fs.writeFileSync(path.join(store(), month, 'deeper', 'x.md'), '# deeper\n');
+    fs.writeFileSync(path.join(store(), month, 'deeper', 'x.prompt'), '# deeper\n');
     fs.mkdirSync(path.join(store(), 'notes'), { recursive: true });
-    fs.writeFileSync(path.join(store(), 'notes', 'y.md'), '# not a month\n');
+    fs.writeFileSync(path.join(store(), 'notes', 'y.prompt'), '# not a month\n');
     fs.writeFileSync(path.join(store(), month, 'z.txt'), 'not markdown');
+    fs.writeFileSync(path.join(store(), month, '01-0000-old.md'), '# an old .md file is not a prompt\n');
     const files = await api.store.list();
     assert.ok(files.length > 0);
-    assert.ok(files.every((f) => /^\d{4}-\d{2}\/[^/]+\.md$/.test(f.rel)), JSON.stringify(files.map((f) => f.rel)));
+    assert.ok(files.every((f) => /^\d{4}-\d{2}\/[^/]+\.prompt$/.test(f.rel)), JSON.stringify(files.map((f) => f.rel)));
     fs.rmSync(path.join(store(), month, 'deeper'), { recursive: true });
     fs.rmSync(path.join(store(), 'notes'), { recursive: true });
     fs.rmSync(path.join(store(), month, 'z.txt'));
+    fs.rmSync(path.join(store(), month, '01-0000-old.md'));
   });
 
   test('ST-11 ST-13 delete moves the file away and drops its pin', async () => {
@@ -211,7 +213,7 @@ suite('Storage', () => {
 
     // VS Code still reports changes inside the hidden folder
     await api.library.ensureLoaded();
-    const rel = `${doc.rel!.split('/')[0]}/01-0000-written-outside.md`;
+    const rel = `${doc.rel!.split('/')[0]}/01-0000-written-outside.prompt`;
     fs.writeFileSync(path.join(store(), ...rel.split('/')), '# Written outside\n');
     await waitFor(() => api.library.get(rel), 'library to notice the new file');
   });
@@ -427,7 +429,9 @@ suite('Untitled swap', () => {
 suite('Opening prompt files', () => {
   teardown(closeAll);
 
-  test('CE-01 CE-04 a prompt file opens in the composer, once', async () => {
+  test('CE-01 CE-04 ST-17 a prompt file opens in the composer, once, whatever *.md is associated with', async () => {
+    // like a notes editor set as the default for .md: it must not claim prompts
+    await config('workbench', 'editorAssociations', { '*.md': 'default' });
     const doc = await saveNew('# Opened from Explorer\n');
     const rel = doc.rel!;
     await closeAll();
@@ -440,6 +444,7 @@ suite('Opening prompt files', () => {
     await sleep(800);
     const panels = vscode.window.tabGroups.all.flatMap((g) => g.tabs).filter((t) => t.input instanceof vscode.TabInputWebview && (t.input as vscode.TabInputWebview).viewType.endsWith('promptComposer.editor'));
     assert.equal(panels.length, 1);
+    await config('workbench', 'editorAssociations', undefined);
   });
 
   test('CE-02 other Markdown files open normally', async () => {
@@ -457,6 +462,7 @@ suite('Opening prompt files', () => {
     await sleep(300);
     await vscode.commands.executeCommand('type', { text: 'typed into the text view' });
     await sleep(200);
+    assert.equal(ed.document.languageId, 'markdown', 'shown as Markdown');
     assert.equal(ed.document.getText(), '# As text\n');
     assert.equal(ed.document.isDirty, false);
   });

@@ -53,7 +53,7 @@ This guide is for trying the extension by hand in VS Code's **Extension Developm
 | 2 | Double-click empty space in the panel | A new tab **Untitled prompt** with the caret ready and the hint "Write your prompt… Type / for commands, @ to mention a file" | ED-01 |
 | 3 | Type `# My first prompt` | The tab title changes to "My first prompt" as you type | ED-02 |
 | 4 | Look at the tab and the panel | A filled dot as the tab's icon; in the panel, under **Today**, an italic row with a dot (not saved yet) | SV-01, PN-10 |
-| 5 | Press **Ctrl+S** | The dot goes away. The Explorer still doesn't show `.prompt-composer/`: VS Code hides it, and nothing was added to your settings. Panel **⋯ → Reveal Prompts Folder in File Explorer** shows it on disk: `.gitignore` (containing `*`) and `2026-10/DD-HHmm-my-first-prompt.md` | ST-01, ST-04, ST-16, CP-05 |
+| 5 | Press **Ctrl+S** | The dot goes away. The Explorer still doesn't show `.prompt-composer/`: VS Code hides it, and nothing was added to your settings. Panel **⋯ → Reveal Prompts Folder in File Explorer** shows it on disk: `.gitignore` (containing `*`) and `2026-10/DD-HHmm-my-first-prompt.prompt` | ST-01, ST-04, ST-16, CP-05 |
 | 6 | Change the heading to `# Renamed` and save | The tab shows "Renamed"; the file name doesn't change | ST-07 |
 | 7 | Make two more prompts, then single-click one in the panel, then another | Single-clicks reuse one *preview* tab | PN-06 |
 | 8 | Double-click a prompt row | It opens as a normal tab, caret inside | PN-06 |
@@ -151,13 +151,14 @@ This guide is for trying the extension by hand in VS Code's **Extension Developm
 
 | # | Do this | You should see | ID |
 |---|---|---|---|
-| 1 | **File → Open File…** (Ctrl+O) and pick `.prompt-composer/2026-10/<a prompt>.md` | It opens in the composer (tab titled with the prompt's title), not as text | CE-01 |
+| 1 | **File → Open File…** (Ctrl+O) and pick `.prompt-composer/2026-10/<a prompt>.prompt` | It opens in the composer (tab titled with the prompt's title), not as text | CE-01 |
 | 2 | Open `README.md` | It opens as a normal text file | CE-02 |
-| 3 | In a prompt tab, editor title → **Open as Text** | The `.md` opens beside it, read-only | CE-03 |
+| 3 | In a prompt tab, editor title → **Open as Text** | The `.prompt` file opens beside it, read-only, highlighted as Markdown | CE-03 |
 | 4 | Open a prompt that's already open | Its tab is focused; no second tab | CE-04 |
-| 5 | Right-click a prompt → **Copy @Path for Claude** | `@.prompt-composer/2026-10/<file>.md` on the clipboard | CP-02 |
+| 5 | Right-click a prompt → **Copy @Path for Claude** | `@.prompt-composer/2026-10/<file>.prompt` on the clipboard | CP-02 |
 | 6 | Right-click → **Reveal in File Explorer**; panel **⋯** → **Reveal Prompts Folder in File Explorer** | Windows File Explorer opens with the prompt selected / inside `.prompt-composer/` on the newest month | CP-03, CP-05 |
 | 7 | Run the debug window with **no folder open** (File → Close Folder) | The panel says "Open a folder to use Prompt Composer"; New Prompt asks you to open a folder | ST-14 |
+| 8 | In a profile where `.md` opens in another editor (e.g. `"workbench.editorAssociations": { "*.md": "synapse-note.editor" }`), open a prompt with **File → Open File…** | It still opens in the composer; your `.md` files still open in the other editor | ST-17 |
 
 ---
 

@@ -4,9 +4,9 @@ import {
 } from '../../src/common/naming';
 
 describe('ST-04 file names', () => {
-  it('DD-HHmm-<slug>.md from the creation time', () => {
+  it('DD-HHmm-<slug>.prompt from the creation time', () => {
     const d = new Date(2026, 9, 3, 14, 5);
-    expect(promptFileName(d, 'refactor-auth')).toBe('03-1405-refactor-auth.md');
+    expect(promptFileName(d, 'refactor-auth')).toBe('03-1405-refactor-auth.prompt');
     expect(monthKey(d)).toBe('2026-10');
     expect(dayKey(d)).toBe('2026-10-03');
   });
@@ -36,30 +36,32 @@ describe('ST-05 slugs', () => {
 describe('ST-06 numbering', () => {
   it('adds -2, -3 for the same minute and title', () => {
     const d = new Date(2026, 9, 3, 9, 2);
-    expect(promptFileName(d, 'x', 2)).toBe('03-0902-x-2.md');
-    expect(promptFileName(d, 'x', 3)).toBe('03-0902-x-3.md');
+    expect(promptFileName(d, 'x', 2)).toBe('03-0902-x-2.prompt');
+    expect(promptFileName(d, 'x', 3)).toBe('03-0902-x-3.prompt');
   });
 });
 
 describe('ST-08 temporary files are not prompts', () => {
-  it('only visible .md files count', () => {
-    expect(isPromptFileName('03-1415-x.md')).toBe(true);
-    expect(isPromptFileName('notes.MD')).toBe(true);
-    expect(isPromptFileName('.03-1415-x.md.ab12.tmp')).toBe(false);
-    expect(isPromptFileName('.hidden.md')).toBe(false);
+  it('only visible .prompt files count; .md files are not prompts', () => {
+    expect(isPromptFileName('03-1415-x.prompt')).toBe(true);
+    expect(isPromptFileName('notes.PROMPT')).toBe(true);
+    expect(isPromptFileName('03-1415-x.md')).toBe(false);
+    expect(isPromptFileName('x.prompt.md')).toBe(false);
+    expect(isPromptFileName('.03-1415-x.prompt.ab12.tmp')).toBe(false);
+    expect(isPromptFileName('.hidden.prompt')).toBe(false);
     expect(isPromptFileName('image.png')).toBe(false);
   });
 });
 
 describe('ST-10 created time from the name', () => {
   it('reads month folder + DD-HHmm', () => {
-    expect(createdFromName('2026-10', '03-1415-x.md')).toEqual(new Date(2026, 9, 3, 14, 15));
+    expect(createdFromName('2026-10', '03-1415-x.prompt')).toEqual(new Date(2026, 9, 3, 14, 15));
   });
   it('rejects names that do not follow the pattern', () => {
-    expect(createdFromName('2026-10', 'notes.md')).toBeUndefined();
-    expect(createdFromName('2026-13', '03-1415-x.md')).toBeUndefined();
-    expect(createdFromName('2026-02', '31-1415-x.md')).toBeUndefined();
-    expect(createdFromName('2026-10', '03-2575-x.md')).toBeUndefined();
+    expect(createdFromName('2026-10', 'notes.prompt')).toBeUndefined();
+    expect(createdFromName('2026-13', '03-1415-x.prompt')).toBeUndefined();
+    expect(createdFromName('2026-02', '31-1415-x.prompt')).toBeUndefined();
+    expect(createdFromName('2026-10', '03-2575-x.prompt')).toBeUndefined();
   });
 });
 

@@ -52,7 +52,7 @@ try {
   const months = readdirSync(month).filter((d) => /^\d{4}-\d{2}$/.test(d));
   const files = readdirSync(join(month, months[0]));
   console.log('saved:', files);
-  if (!files.some((f) => f.endsWith('-packaged-build-works.md'))) throw new Error('prompt not saved');
+  if (!files.some((f) => f.endsWith('-packaged-build-works.prompt'))) throw new Error('prompt not saved');
   mkdirSync(join(root, 'test-results'), { recursive: true });
   await page.screenshot({ path: join(root, 'test-results', 'vsix-smoke.png') });
   console.log('VSIX smoke test passed');

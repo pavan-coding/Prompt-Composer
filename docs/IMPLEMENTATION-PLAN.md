@@ -37,7 +37,7 @@ src/
   editor/
     promptDocument.ts     one prompt: uri?, created, saved text, draft, dirty, title
     editorManager.ts      webview panels, preview tab, save/close/revert, auto-save modes, drafts backup
-    redirectEditor.ts     custom editor for .prompt-composer/*/*.md → opens the composer instead
+    redirectEditor.ts     custom editor for .prompt-composer/*/*.prompt → opens the composer instead
     html.ts               webview HTML with CSP, nonce, asset URIs
   library/
     libraryView.ts        WebviewViewProvider for the side-bar panel
@@ -106,7 +106,7 @@ docs/
 1. The host sends `flush`; the webview replies with `{ markdown, title }`. This guarantees the latest keystrokes are included.
 2. Where to write:
    - If the document has no `uri` and the Markdown is empty, nothing is written.
-   - If it has no `uri` yet, `PromptStore.allocate(created, title)` picks `.prompt-composer/YYYY-MM/DD-HHmm-<slug>.md`, unique (`-2`, `-3`…). The first save also creates `.prompt-composer/`, `.gitignore` (when the setting is on) and the month folder.
+   - If it has no `uri` yet, `PromptStore.allocate(created, title)` picks `.prompt-composer/YYYY-MM/DD-HHmm-<slug>.prompt`, unique (`-2`, `-3`…). The first save also creates `.prompt-composer/`, `.gitignore` (when the setting is on) and the month folder.
 3. **Atomic write:** write `.<name>.<random>.tmp` in the same folder, then rename it over the target.
 4. Then the document records `savedText`, `dirty = false`, the tab icon goes back to the prompt icon, and the library refreshes that entry.
 
@@ -149,7 +149,7 @@ docs/
 
 ### Opening a prompt file from the Explorer
 
-- A `CustomReadonlyEditorProvider` (`promptComposer.redirect`), priority `default`, selector `**/.prompt-composer/*/*.md`.
+- A `CustomReadonlyEditorProvider` (`promptComposer.redirect`), priority `default`, selector `**/.prompt-composer/*/*.prompt`. Prompt files have their own extension so `*.md` editor associations never compete with it; `contributes.languages` maps the same pattern to `markdown` for the read-only text view.
 - `resolveCustomEditor` calls `EditorManager.open(uri, { viewColumn })`, then disposes its own panel.
 - "Open as Text" uses `vscode.openWith(uri, 'default')`, then `workbench.action.files.setActiveEditorReadonlyInSession`.
 

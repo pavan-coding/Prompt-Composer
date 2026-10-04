@@ -4,11 +4,15 @@
 //     .gitignore            "*"
 //     images/               flat: YYYY-MM-DD-HHmmss.png (pasted) or the dropped file's own name
 //     YYYY-MM/              one folder per month
-//       DD-HHmm-<slug>.md   DD-HHmm = when the prompt was created
+//       DD-HHmm-<slug>.prompt   DD-HHmm = when the prompt was created; Markdown inside
+//
+// Prompts use their own extension, not .md, so Markdown tools and `*.md` editor associations
+// (e.g. a notes editor set as the default for .md) leave them alone.
 
 export const STORE_DIR = '.prompt-composer';
 export const IMAGES_DIR = 'images';
 export const GITIGNORE_CONTENT = '*\n';
+export const PROMPT_EXT = '.prompt';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
@@ -31,16 +35,16 @@ export function slugify(title: string): string {
   return Array.from(s).slice(0, 48).join('').replace(/-+$/, '') || 'untitled';
 }
 
-/** "03-1415-refactor-auth.md", or "03-1415-refactor-auth-2.md" for n = 2. */
+/** "03-1415-refactor-auth.prompt", or "03-1415-refactor-auth-2.prompt" for n = 2. */
 export function promptFileName(created: Date, slug: string, n = 1): string {
-  return `${pad(created.getDate())}-${pad(created.getHours())}${pad(created.getMinutes())}-${slug}${n > 1 ? `-${n}` : ''}.md`;
+  return `${pad(created.getDate())}-${pad(created.getHours())}${pad(created.getMinutes())}-${slug}${n > 1 ? `-${n}` : ''}${PROMPT_EXT}`;
 }
 
-/** Is this a prompt file name? (a visible .md file; temporary files start with ".") */
-export const isPromptFileName = (name: string) => /\.md$/i.test(name) && !name.startsWith('.');
+/** Is this a prompt file name? (a visible .prompt file; temporary files start with ".") */
+export const isPromptFileName = (name: string) => name.toLowerCase().endsWith(PROMPT_EXT) && !name.startsWith('.');
 
 /**
- * When a prompt was created, from its month folder and file name ("2026-10", "03-1415-x.md").
+ * When a prompt was created, from its month folder and file name ("2026-10", "03-1415-x.prompt").
  * Undefined when the name doesn't follow the pattern (the caller falls back to the file's modified time).
  */
 export function createdFromName(month: string, file: string): Date | undefined {

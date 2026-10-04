@@ -297,7 +297,7 @@ export const tests = [
   {
     name: 'ED-12 Ctrl+click follows a workspace link without selecting the block',
     async fn({ vsc }) {
-      await openFile(vsc, `${monthKey}/01-0900-links.md`, 'See [the readme](README.md) now\n');
+      await openFile(vsc, `${monthKey}/01-0900-links.prompt`, 'See [the readme](README.md) now\n');
       await editor(vsc).locator('a').first().click({ modifiers: ['Control'] });
       await waitTab(vsc, 'README.md');
       await vsc.command('workbench.action.previousEditor');
@@ -369,7 +369,7 @@ export const tests = [
   {
     name: 'ED-15 settings apply to open editors at once',
     async fn({ vsc }) {
-      await openFile(vsc, `${monthKey}/01-0901-settings.md`, 'Mention @src/server/auth.ts here\n');
+      await openFile(vsc, `${monthKey}/01-0901-settings.prompt`, 'Mention @src/server/auth.ts here\n');
       const body = editor(vsc).locator('body');
       const app = editor(vsc).locator('#app');
       assert.match(await body.getAttribute('class'), /m-icon/);
@@ -386,7 +386,7 @@ export const tests = [
   {
     name: 'ED-16 ED-18 colours follow the theme (Dark Modern values, then Light Modern)',
     async fn({ vsc, shot }) {
-      await openFile(vsc, `${monthKey}/01-0902-colours.md`, '# Colours\n\nSome `inline` code and a task:\n\n- [x] done\n\n```js\nlet a = 1;\n```\n');
+      await openFile(vsc, `${monthKey}/01-0902-colours.prompt`, '# Colours\n\nSome `inline` code and a task:\n\n- [x] done\n\n```js\nlet a = 1;\n```\n');
       const f = editor(vsc);
       assert.equal(await css(f.locator('#app'), 'background-color'), 'rgb(31, 31, 31)');
       assert.equal(await css(f.locator('pre').first(), 'background-color'), 'rgb(43, 43, 43)');
@@ -411,7 +411,7 @@ export const tests = [
   {
     name: 'ED-17 raw blocks show and save as typed',
     async fn({ vsc }) {
-      const rel = `${monthKey}/01-0903-raw.md`;
+      const rel = `${monthKey}/01-0903-raw.prompt`;
       await openFile(vsc, rel, '| a | b |\n|---|---|\n| 1 | 2 |\n\nafter\n');
       const raw = editor(vsc).locator('pre.raw-block');
       await raw.waitFor();
@@ -460,7 +460,7 @@ export const tests = [
   {
     name: 'SV-06 closing a changed prompt asks Save / Don\'t Save (Save writes)',
     async fn({ vsc, shot }) {
-      const rel = `${monthKey}/01-0904-close.md`;
+      const rel = `${monthKey}/01-0904-close.prompt`;
       await openFile(vsc, rel, '# Close me\n');
       await caretToEnd(vsc);
       await vsc.press('Enter');
@@ -479,7 +479,7 @@ export const tests = [
   {
     name: 'SV-09 CE-05 unsaved changes survive a window reload',
     async fn({ vsc, shot, relaunch }) {
-      const rel = `${monthKey}/01-0905-reload.md`;
+      const rel = `${monthKey}/01-0905-reload.prompt`;
       await openFile(vsc, rel, '# Reload me\n');
       await caretToEnd(vsc);
       await vsc.press('Enter');
@@ -551,8 +551,8 @@ export const tests = [
     name: 'PN-02 PN-06 panel groups by day; click previews (reused), double-click opens',
     async fn({ vsc, shot }) {
       await vsc.openPanel();
-      const a = `${monthKey}/${pad(today.getDate())}-0800-preview-a.md`;
-      const b = `${monthKey}/${pad(today.getDate())}-0801-preview-b.md`;
+      const a = `${monthKey}/${pad(today.getDate())}-0800-preview-a.prompt`;
+      const b = `${monthKey}/${pad(today.getDate())}-0801-preview-b.prompt`;
       for (const [rel, t] of [[a, '# Preview A\n'], [b, '# Preview B\n']]) {
         mkdirSync(join(vsc.ws, '.prompt-composer', monthKey), { recursive: true });
         writeFileSync(join(vsc.ws, '.prompt-composer', ...rel.split('/')), t);
@@ -580,9 +580,9 @@ export const tests = [
       const old = new Date(today.getFullYear(), today.getMonth() - 2, 5, 9, 30);
       const om = `${old.getFullYear()}-${pad(old.getMonth() + 1)}`;
       mkdirSync(join(vsc.ws, '.prompt-composer', om), { recursive: true });
-      writeFileSync(join(vsc.ws, '.prompt-composer', om, '05-0930-split-routes.md'), '# Split routes\n\n@src/server/routes.ts is too long\n');
+      writeFileSync(join(vsc.ws, '.prompt-composer', om, '05-0930-split-routes.prompt'), '# Split routes\n\n@src/server/routes.ts is too long\n');
       // an earlier day this month (none on the 1st)
-      const earlier = today.getDate() > 1 ? `${monthKey}/${pad(today.getDate() - 1)}-1200-earlier-this-month.md` : undefined;
+      const earlier = today.getDate() > 1 ? `${monthKey}/${pad(today.getDate() - 1)}-1200-earlier-this-month.prompt` : undefined;
       if (earlier) writeFileSync(join(vsc.ws, '.prompt-composer', ...earlier.split('/')), '# Earlier this month\n');
       const monthName = (d) => new RegExp(d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }), 'i');
       const oldGroup = lib(vsc).locator('.lrow.grp', { hasText: monthName(old) });
@@ -730,7 +730,7 @@ export const tests = [
   {
     name: 'MN-14 CP-04 broken mentions are flagged; the status bar counts and jumps to them',
     async fn({ vsc, shot }) {
-      await openFile(vsc, `${monthKey}/01-0906-broken.md`, 'Use @src/server/auth.ts but not @src/legacy/session.ts\n');
+      await openFile(vsc, `${monthKey}/01-0906-broken.prompt`, 'Use @src/server/auth.ts but not @src/legacy/session.ts\n');
       const broken = editor(vsc).locator('.mention.is-broken');
       await broken.waitFor();
       const item = vsc.page.locator('.statusbar-item', { hasText: /broken/ });
@@ -768,7 +768,7 @@ export const tests = [
   {
     name: 'MD-18 MD-19 copying gives Markdown; pasting Markdown gives formatting',
     async fn({ vsc }) {
-      await openFile(vsc, `${monthKey}/01-0907-copy.md`, '# Copy\n\nSome **bold** and @src/server/auth.ts\n\n- a\n- b\n');
+      await openFile(vsc, `${monthKey}/01-0907-copy.prompt`, '# Copy\n\nSome **bold** and @src/server/auth.ts\n\n- a\n- b\n');
       await vsc.press('Control+a');
       await vsc.press('Control+c');
       await sleep(300);
@@ -786,7 +786,7 @@ export const tests = [
     async fn({ vsc, note }) {
       const lines = [];
       for (let i = 0; i < 1000; i++) lines.push(i % 25 === 0 ? `## Section ${i}` : `Line ${i} with some **bold** text and @src/server/auth.ts`);
-      const rel = `${monthKey}/01-0908-big.md`;
+      const rel = `${monthKey}/01-0908-big.prompt`;
       mkdirSync(join(vsc.ws, '.prompt-composer', monthKey), { recursive: true });
       writeFileSync(join(vsc.ws, '.prompt-composer', ...rel.split('/')), lines.join('\n\n') + '\n');
       const t0 = Date.now();
@@ -824,7 +824,7 @@ export const tests = [
   {
     name: 'ST-16 the Explorer does not show .prompt-composer',
     async fn({ vsc, shot }) {
-      await openFile(vsc, `${monthKey}/${pad(today.getDate())}-0700-explorer-check.md`, '# Explorer check\n');
+      await openFile(vsc, `${monthKey}/${pad(today.getDate())}-0700-explorer-check.prompt`, '# Explorer check\n');
       await vsc.command('workbench.view.explorer');
       const names = vsc.page.locator('.explorer-folders-view .monaco-list-row .label-name');
       await names.first().waitFor({ timeout: 8000 });

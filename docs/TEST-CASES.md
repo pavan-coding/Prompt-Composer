@@ -21,12 +21,12 @@ Totals: 89 unit tests, 52 integration tests, 40 end-to-end tests passed, 1 end-t
 | ST-01 | First save in a folder with no `.prompt-composer/` | Creates `.prompt-composer/`, `.prompt-composer/.gitignore` containing `*`, and the month folder `YYYY-MM/`. Nothing is created before the first save. | I | ✅ |
 | ST-02 | `.gitignore` already exists (edited by the user) | Left untouched | I | ✅ |
 | ST-03 | `promptComposer.gitignore` off | No `.gitignore` is written | I | ✅ |
-| ST-04 | File name of a saved prompt | `DD-HHmm-<slug>.md`, where `DD-HHmm` is when the prompt was created and the month folder is that month | U, I | ✅ |
+| ST-04 | File name of a saved prompt | `DD-HHmm-<slug>.prompt`, where `DD-HHmm` is when the prompt was created and the month folder is that month | U, I | ✅ |
 | ST-05 | Slug rules | Lower case; letters and digits of any script kept; everything else becomes `-`; trimmed; at most 48 characters; empty → `untitled` | U | ✅ |
 | ST-06 | Two prompts, same minute, same title | Second file gets `-2`, third `-3`; nothing overwritten | U, I | ✅ |
 | ST-07 | Title changed after the first save | File name stays the same; the tab shows the new title | I | ✅ |
 | ST-08 | Atomic write | Content written via a temporary file then renamed; no `.tmp` file left behind; a temporary file is never listed as a prompt | U, I | ✅ |
-| ST-09 | Listing is one level deep | Only `.prompt-composer/YYYY-MM/*.md` are prompts. Deeper files, non-month folders, `images/` and non-`.md` files are ignored | U, I | ✅ |
+| ST-09 | Listing is one level deep | Only `.prompt-composer/YYYY-MM/*.prompt` are prompts. Deeper files, non-month folders, `images/` and other files (`.md` included) are ignored | U, I | ✅ |
 | ST-10 | Created time | Taken from `YYYY-MM` + `DD-HHmm`; files without that pattern fall back to their modified time | U | ✅ |
 | ST-11 | Delete | Moves the file to the Recycle Bin / Trash; it disappears from the panel | I | ✅ |
 | ST-12 | Duplicate | New file named from now and the same title, same content; opens it | I | ✅ |
@@ -34,6 +34,7 @@ Totals: 89 unit tests, 52 integration tests, 40 end-to-end tests passed, 1 end-t
 | ST-14 | No folder open | Panel shows "Open a folder to use Prompt Composer"; New Prompt explains why it can't start | I | ✅ |
 | ST-15 | File deleted outside | Disappears from the panel; if it's open, the tab stays with its content and saving recreates it | I | ✅ |
 | ST-16 | Folder hidden in VS Code | `.prompt-composer/` isn't shown in the Explorer, Search or Quick Open. It's a contributed `files.exclude` default, so nothing is written to settings and VS Code's own excludes stay. The panel still sees files added or deleted in it | I, E | ✅ |
+| ST-17 | Prompt file type | Prompts are `.prompt` files with Markdown inside. A `*.md` editor association (e.g. a notes editor as the default for `.md`) doesn't claim them; Open as Text shows them as Markdown; a `.md` file in a month folder isn't a prompt | U, I | ✅ |
 
 ## MD: Markdown round trip
 
@@ -137,7 +138,7 @@ Totals: 89 unit tests, 52 integration tests, 40 end-to-end tests passed, 1 end-t
 
 | ID | Case | Expected | Layer | Result |
 |---|---|---|---|---|
-| CE-01 | Open `.prompt-composer/YYYY-MM/x.md` from the Explorer | Opens the composer tab (titled with the prompt title) instead of a text editor | I, E | ✅ |
+| CE-01 | Open `.prompt-composer/YYYY-MM/x.prompt` (File → Open, a link) | Opens the composer tab (titled with the prompt title) instead of a text editor | I, E | ✅ |
 | CE-02 | Any other `.md` | Opens normally | I | ✅ |
 | CE-03 | Open as Text | Opens the file in VS Code's text editor, read-only | I | ✅ |
 | CE-04 | Open an already-open prompt | Focuses its tab; no second tab | I | ✅ |
@@ -181,7 +182,7 @@ Totals: 89 unit tests, 52 integration tests, 40 end-to-end tests passed, 1 end-t
 | ID | Case | Expected | Layer | Result |
 |---|---|---|---|---|
 | CP-01 | Copy as Prompt | Editor-title button and panel menu copy the Markdown | I | ✅ |
-| CP-02 | Copy @Path for Claude | `@.prompt-composer/YYYY-MM/<file>.md` | I | ✅ |
+| CP-02 | Copy @Path for Claude | `@.prompt-composer/YYYY-MM/<file>.prompt` | I | ✅ |
 | CP-03 | Reveal in File Explorer (Reveal in Finder on macOS) | Opens the system file manager with the prompt selected | I | ✅ (the file manager window itself: [TESTING.md](TESTING.md) §8) |
 | CP-04 | Status bar | Mentions, images and "N words · ~T tokens" for the active prompt; hidden otherwise | E | ✅ |
 | CP-05 | Reveal Prompts Folder in File Explorer | ⋯ menu opens the system file manager inside `.prompt-composer/`, on the newest month | I | ✅ (the file manager window itself: [TESTING.md](TESTING.md) §8) |

@@ -6,7 +6,7 @@ Status: approved for development · 2026-10-03. The build steps, test plan and t
 
 Prompt Composer is a VS Code extension for writing prompts for Claude Code without leaving VS Code, and without managing files.
 
-You never create or open a `.md` file yourself.
+You never create or open a prompt file yourself.
 - **Starting a prompt:** you click **New Prompt** or double-click the Prompt Composer panel (or empty space in the tab bar), and a rich (WYSIWYG) editor opens, ready to type.
 - **Saving:** you save the way you save any file in VS Code (Ctrl+S, or VS Code's own Auto Save if you turned it on). The file name and folder are chosen for you: the prompt goes into the extension's own folder, `.prompt-composer/`, sorted by month and day.
 - **Finding a prompt later:** the panel in the Primary Side Bar lists your prompts by month and day, and searches the text inside them.
@@ -52,7 +52,8 @@ If a feature isn't needed to compose and find prompts, it's out.
 | Panel title buttons | New Prompt, Collapse All, More (native `view/title` menu) | These are standard VS Code view buttons. |
 | Right-click menu in the panel | VS Code's real context menu, via the `webview/context` menu and `data-vscode-context` | Native menus, keyboard support and theming, without drawing our own. |
 | The prompt editor | One **webview panel** per open prompt, not a custom text editor | **The tab shows the prompt's title** (a custom editor tab can only show the file name). **Undo is Tiptap's alone**, with no clash with VS Code's document undo. **Saving is left to the user**, the same as any VS Code file: Ctrl+S, plus VS Code's own `files.autoSave` setting when it's on (§4, F0 "Saving"). Webview panels have no built-in dirty state, so the extension supplies it: a dot on the tab, a save prompt when a changed prompt is closed, and unsaved changes that survive a reload. Open prompts come back after a restart (`registerWebviewPanelSerializer`). |
-| Opening a prompt file directly | A custom editor registered only for `.prompt-composer/*/*.md` (month folders, one level) that hands the file to the prompt editor | Opening a prompt file any other way (a link, File → Open, the Explorer if you un-hide the folder) still opens the composer. Every other `.md` in your project stays a normal file. |
+| Prompt file type | `.prompt`, with Markdown inside | Prompts don't end in `.md`, so anything set up for Markdown leaves them alone: a `*.md` editor association (such as a notes editor made the default for `.md`), Markdown linters and spell checkers, notes apps that collect `.md` files. Inside its own folder, Prompt Composer registers `.prompt` as Markdown, so **Open as text** still highlights it. Claude Code reads an `@….prompt` path like any text file. `.md` files in the folder aren't prompts. |
+| Opening a prompt file directly | A custom editor registered only for `.prompt-composer/*/*.prompt` (month folders, one level) that hands the file to the prompt editor | Opening a prompt file any other way (a link, File → Open, the Explorer if you un-hide the folder) still opens the composer. Nothing else in your project is affected. |
 | Look and feel | **Layout and type from Tiptap; colours from your VS Code theme.** Tiptap's Simple Editor gives the layout: DM Sans for text, Inter for menus, Lucide line icons, the 648px column and the spacing. Every colour comes from the active VS Code theme (`--vscode-*` variables), so with Dark Modern you get exactly Dark Modern. An optional setting switches to Tiptap's own palette. | It looks like the Tiptap you've seen online, but blends in with VS Code and any theme. Fonts and icons ship inside the extension (~125 KB of fonts), so it works offline and under the webview's strict security rules. |
 | Floating surfaces | The toolbar, bubble menu, `/` menu, `@` picker and hover card are lifted off the page using only theme colours. Their fill is the theme's widget colour mixed 10% toward the text colour (Dark Modern: `#313131` on a `#1F1F1F` editor). They also get the theme's widget border (`rgba(204,204,204,0.2)`) and widget shadow. Light themes keep the light widget fill and rely on border and shadow. | Dark Modern's own widget colour (`#202020`) is almost identical to its editor (`#1F1F1F`), so a menu painted with it disappears. |
 | Prefer native VS Code UI | Use title-bar buttons, status bar items, quick input, notifications, native context menus and native file pickers | Less webview UI means less to build, a smaller bundle and a familiar feel. |
@@ -104,20 +105,20 @@ my-app/                                   ← the folder VS Code is opened on
       2026-10-03-141602.png               ← pasted image: full date and time in the name (the folder is flat)
       login-bug.png                       ← dropped file keeps its name
     2026-10/
-      03-1415-refactor-auth-token-refresh.md
-      03-0902-add-rate-limit-to-login.md
-      01-1120-explain-the-config-loading-order.md
+      03-1415-refactor-auth-token-refresh.prompt
+      03-0902-add-rate-limit-to-login.prompt
+      01-1120-explain-the-config-loading-order.prompt
     2026-09/
       …
 ```
 
-- **Processing reads one level only.** The extension lists `.prompt-composer/`, then the `.md` files directly inside each `YYYY-MM` folder, and nothing deeper.
+- **Processing reads one level only.** The extension lists `.prompt-composer/`, then the `.prompt` files directly inside each `YYYY-MM` folder, and nothing deeper.
   - Anything placed deeper, or folders not named `YYYY-MM`, are ignored.
-  - The file watcher uses the same shape (`.prompt-composer/*/*.md`), so it stays cheap.
+  - The file watcher uses the same shape (`.prompt-composer/*/*.prompt`), so it stays cheap.
 - **Month folders** keep any single folder small, even after years of prompts.
-- **File names** are `DD-HHmm-<title>.md`, so they sort by day and time on their own.
+- **File names** are `DD-HHmm-<title>.prompt`, so they sort by day and time on their own.
   - A new prompt has **no file** until its first save. `DD-HHmm` is when you created the prompt, and the month folder is that month.
-  - The first save names it `DD-HHmm-<title-slug>.md`. It's never renamed after that: the tab shows the live title, so the file name doesn't need to keep up.
+  - The first save names it `DD-HHmm-<title-slug>.prompt`. It's never renamed after that: the tab shows the live title, so the file name doesn't need to keep up.
   - The slug keeps letters and digits from any language, in lower case, with `-` between words, up to 48 characters.
   - Two prompts in the same minute with the same title get `-2`, `-3`…; nothing is ever overwritten.
 - **The title** is the prompt's first heading or first line, and "Untitled prompt" while it's empty.
@@ -293,7 +294,7 @@ More space is the user's choice: press Enter again. Empty lines are kept in the 
   - The gutter simply counts the lines you see, 1, 2, 3… with no gaps.
   - A paragraph that wraps onto two lines takes two numbers. Empty lines count, each code line counts, and an image or divider counts as one.
   - Numbers re-flow when the column width changes, like a word processor's line numbering.
-  - These are display line counts, not the `.md` file's line numbers ("Open as text" shows those).
+  - These are display line counts, not the file's line numbers ("Open as text" shows those).
   - The current line's number is highlighted (`editorLineNumber.activeForeground`); the others use `editorLineNumber.foreground`.
   - The column widens to make room for the gutter, and the drag handle sits between the numbers and the text.
 - The toolbar can be turned off (`promptComposer.toolbar`: `"mid"`, `"full"`, `"off"`); the bubble menu and `/` commands are always there.
@@ -409,7 +410,7 @@ Only Prompt Composer writes into `.prompt-composer/`, which keeps this simple:
 
 - **No live sync with outside edits** is needed for prompts: no agent or other tool edits them.
 - **Undo/redo belongs to Tiptap** inside the prompt editor. With no VS Code text document in between, there's one undo stack and nothing to reconcile.
-- **"Open as text"** (editor-title button) opens the prompt's `.md` in VS Code's normal text editor, read-only, so there are never two writers. Prompt files are read-only in text editors through a contributed `files.readonlyInclude` default for `**/.prompt-composer/**`; the extension's own saves aren't affected.
+- **"Open as text"** (editor-title button) opens the prompt's `.prompt` file in VS Code's normal text editor, read-only and highlighted as Markdown, so there are never two writers. Prompt files are read-only in text editors through a contributed `files.readonlyInclude` default for `**/.prompt-composer/**`; the extension's own saves aren't affected.
 - **A small file watcher on `.prompt-composer/`** only notices files deleted or moved by hand in the Explorer, and updates the panel.
 - **One tab per prompt.** Opening a prompt that's already open focuses its tab, and "Open to the Side" moves that tab to the side group. Two live copies of one prompt would need a sync engine for little gain.
 

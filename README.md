@@ -10,7 +10,7 @@ Write prompts for Claude Code in VS Code, in a rich Markdown editor, and never m
   - pasted screenshots
   - `/` commands, a bubble menu, moving blocks with Alt+↑/↓
 - **A searchable library:** prompts are saved in `.prompt-composer/YYYY-MM/` in your project, git-ignored and hidden from VS Code's Explorer, Search and Quick Open automatically. The panel lists Pinned prompts and this month by day, and its search covers every month.
-- **Plain Markdown on disk**, with `@path` mentions Claude Code understands, and **Copy as Prompt** turns pasted images into `@paths` too.
+- **Plain Markdown on disk**, in `.prompt` files (their own extension, so Markdown editors and `*.md` settings leave them alone), with `@path` mentions Claude Code understands, and **Copy as Prompt** turns pasted images into `@paths` too.
 - **Saving works like any VS Code file:** Ctrl+S, or VS Code's own Auto Save.
 
 ## Develop and test

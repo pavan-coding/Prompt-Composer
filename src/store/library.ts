@@ -1,9 +1,9 @@
 // In-memory index of every saved prompt (title + search text), kept current by a file watcher on
-// .prompt-composer/*/*.md, plus pins. Loaded the first time something needs it, never at startup.
+// .prompt-composer/*/*.prompt, plus pins. Loaded the first time something needs it, never at startup.
 import * as vscode from 'vscode';
 import { PromptStore, StoredPrompt } from './promptStore';
 import { searchLines, titleOf } from '../common/markdownText';
-import { STORE_DIR } from '../common/naming';
+import { STORE_DIR, PROMPT_EXT } from '../common/naming';
 
 export interface LibraryEntry {
   rel: string;
@@ -36,7 +36,7 @@ export class Library implements vscode.Disposable {
 
   constructor(readonly store: PromptStore, private readonly state: vscode.Memento) {
     const watcher = vscode.workspace.createFileSystemWatcher(
-      new vscode.RelativePattern(vscode.Uri.file(store.workspaceRoot), `${STORE_DIR}/*/*.md`),
+      new vscode.RelativePattern(vscode.Uri.file(store.workspaceRoot), `${STORE_DIR}/*/*${PROMPT_EXT}`),
     );
     const refresh = (uri: vscode.Uri) => {
       const rel = store.relOf(uri.fsPath);
