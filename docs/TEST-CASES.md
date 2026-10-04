@@ -100,6 +100,7 @@ Totals: 89 unit tests, 52 integration tests, 40 end-to-end tests passed, 1 end-t
 | ED-16 | Theme | Switching Dark Modern ↔ Light Modern recolours editor, menus and code at once | E | ✅ |
 | ED-17 | Raw blocks | Unknown Markdown shows as an editable raw block and is saved as typed | E | ✅ |
 | ED-18 | Look | Colours match Dark Modern (editor `#1F1F1F`, code block `#2B2B2B`, inline code `#3C3C3C`); floating menus stand apart; checkbox sharp at 125% | E, M | ✅ (sharpness at 125%: 👤) |
+| ED-19 | Heading colours | Muted blue from the theme: H1 `#86B9E6`, H2 `#99BEDF`, H3 `#ACC4D8` in Dark Modern; H1 `#1B4F80` … H3 `#2C445A` in Light Modern | E | ✅ |
 
 ## SV: saving
 

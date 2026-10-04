@@ -17,6 +17,11 @@
   --pc-hover: var(--vscode-toolbar-hoverBackground);
   --pc-pressed: var(--vscode-toolbar-activeBackground);
   --pc-accent: var(--vscode-textLink-foreground);
+  /* Headings: a muted tint of the link colour, fading toward the text colour by level
+     (Dark Modern: #86B9E6, #99BEDF, #ACC4D8). */
+  --pc-h1: color-mix(in srgb, var(--vscode-textLink-foreground) 55%, var(--vscode-editor-foreground));
+  --pc-h2: color-mix(in srgb, var(--vscode-textLink-foreground) 40%, var(--vscode-editor-foreground));
+  --pc-h3: color-mix(in srgb, var(--vscode-textLink-foreground) 25%, var(--vscode-editor-foreground));
   --pc-match: var(--vscode-editorSuggestWidget-highlightForeground, var(--vscode-textLink-foreground));
   --pc-mention: var(--vscode-textLink-foreground);
   --pc-mention-bg: color-mix(in srgb, var(--vscode-textLink-foreground) 15%, transparent);
@@ -159,10 +164,10 @@ button { font: inherit; color: inherit; }
 .ProseMirror > * + * { margin-top: 12px; }
 .ProseMirror > p + p { margin-top: 2px; }
 .ProseMirror :is(h1, h2, h3, h4, h5, h6) { line-height: 1.3; }
-.ProseMirror h1 { font-size: 1.5em; font-weight: 700; }
-.ProseMirror h2 { font-size: 1.25em; font-weight: 700; }
-.ProseMirror h3 { font-size: 1.125em; font-weight: 600; }
-.ProseMirror :is(h4, h5, h6) { font-size: 1em; font-weight: 600; }
+.ProseMirror h1 { font-size: 1.5em; font-weight: 700; color: var(--pc-h1, inherit); }
+.ProseMirror h2 { font-size: 1.25em; font-weight: 700; color: var(--pc-h2, inherit); }
+.ProseMirror h3 { font-size: 1.125em; font-weight: 600; color: var(--pc-h3, inherit); }
+.ProseMirror :is(h4, h5, h6) { font-size: 1em; font-weight: 600; color: var(--pc-h3, inherit); }
 .ProseMirror > * + :is(h1, h2) { margin-top: 24px; }
 .ProseMirror > * + :is(h3, h4, h5, h6) { margin-top: 18px; }
 .ProseMirror > :is(h1, h2, h3, h4, h5, h6) + * { margin-top: 6px; }

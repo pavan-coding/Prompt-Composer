@@ -384,10 +384,23 @@ export const tests = [
     },
   },
   {
-    name: 'ED-16 ED-18 colours follow the theme (Dark Modern values, then Light Modern)',
+    name: 'ED-16 ED-18 ED-19 colours follow the theme (Dark Modern values, then Light Modern); muted blue headings',
     async fn({ vsc, shot }) {
-      await openFile(vsc, `${monthKey}/01-0902-colours.prompt`, '# Colours\n\nSome `inline` code and a task:\n\n- [x] done\n\n```js\nlet a = 1;\n```\n');
+      await openFile(vsc, `${monthKey}/01-0902-colours.prompt`, '# Colours\n\nSome `inline` code and a task:\n\n- [x] done\n\n```js\nlet a = 1;\n```\n\n## Context\n\n### Steps\n');
       const f = editor(vsc);
+      // color-mix() computes to "color(srgb r g b)"; compare as 0-255 channels, within 1
+      const rgb = async (sel) => {
+        const v = await css(f.locator(sel).first(), 'color');
+        const n = v.match(/[\d.]+/g).slice(0, 3).map(Number);
+        return v.startsWith('color(') ? n.map((x) => Math.round(x * 255)) : n;
+      };
+      const near = async (sel, want) => {
+        const got = await rgb(sel);
+        assert.ok(got.every((c, i) => Math.abs(c - want[i]) <= 1), `${sel} is rgb(${want}), got rgb(${got})`);
+      };
+      await near('.ProseMirror h1', [134, 185, 230]);
+      await near('.ProseMirror h2', [153, 190, 223]);
+      await near('.ProseMirror h3', [172, 196, 216]);
       assert.equal(await css(f.locator('#app'), 'background-color'), 'rgb(31, 31, 31)');
       assert.equal(await css(f.locator('pre').first(), 'background-color'), 'rgb(43, 43, 43)');
       assert.equal(await css(f.locator('p code').first(), 'background-color'), 'rgb(60, 60, 60)');
@@ -403,6 +416,8 @@ export const tests = [
       await shot('dark');
       await setting(vsc, 'workbench', 'colorTheme', 'Default Light Modern');
       await vsc.waitFor(async () => (await css(f.locator('#app'), 'background-color')) === 'rgb(255, 255, 255)', 5000, 'light background');
+      await near('.ProseMirror h1', [27, 79, 128]);
+      await near('.ProseMirror h3', [44, 68, 90]);
       await shot('light');
       await setting(vsc, 'workbench', 'colorTheme', 'Default Dark Modern');
       await vsc.waitFor(async () => (await css(f.locator('#app'), 'background-color')) === 'rgb(31, 31, 31)', 5000, 'dark again');

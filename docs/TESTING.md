@@ -115,10 +115,11 @@ This guide is for trying the extension by hand in VS Code's **Extension Developm
 | 15 | Settings: `promptComposer.mentions.style`, `editor.colors`, `editor.width`, `toolbar`, `caret`, `lineNumbers` | Each change applies to open editors immediately | ED-15 |
 | 16 | Switch theme (Dark Modern ↔ Light Modern) | The editor, menus and code colours follow at once | ED-16 |
 | 17 | Look closely at 125% scaling | Editor background `#1F1F1F`, code blocks `#2B2B2B`, inline code `#3C3C3C`. Toolbar and menus stand out from the page. Checkboxes are sharp, blue when ticked | ED-18 |
-| 18 | Paste a Markdown table (or open a prompt that has one) | It shows as a dashed "Markdown" raw block, edited as text and saved exactly | ED-17 |
-| 19 | Write `<instructions>` … `</instructions>` on their own lines | They stay plain text lines and are saved unescaped | MD-09 |
-| 20 | Select all, Ctrl+C, paste into a terminal or text file | You get Markdown with `@paths` | MD-18 |
-| 21 | Copy Markdown text from a text file and paste it into a prompt | It becomes headings, lists… | MD-19 |
+| 18 | Write `# Title`, `## Section` and `### Step` | Headings in a quiet blue that fades by level (H1 strongest, H3 closest to the text colour); body text stays the normal colour | ED-19 |
+| 19 | Paste a Markdown table (or open a prompt that has one) | It shows as a dashed "Markdown" raw block, edited as text and saved exactly | ED-17 |
+| 20 | Write `<instructions>` … `</instructions>` on their own lines | They stay plain text lines and are saved unescaped | MD-09 |
+| 21 | Select all, Ctrl+C, paste into a terminal or text file | You get Markdown with `@paths` | MD-18 |
+| 22 | Copy Markdown text from a text file and paste it into a prompt | It becomes headings, lists… | MD-19 |
 
 ## 6. `@` mentions
 
