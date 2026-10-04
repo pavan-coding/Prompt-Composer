@@ -13,6 +13,16 @@ Write prompts for Claude Code in VS Code, in a rich Markdown editor, and never m
 - **Plain Markdown on disk**, in `.prompt` files (their own extension, so Markdown editors and `*.md` settings leave them alone), with `@path` mentions Claude Code understands, and **Copy as Prompt** turns pasted images into `@paths` too.
 - **Saving works like any VS Code file:** Ctrl+S, or VS Code's own Auto Save.
 
+## Install
+
+Each release is kept in [`releases/`](releases/), one folder per version, with its `.vsix` and release notes. To install v0.1.0:
+
+```bash
+code --install-extension releases/v0.1.0/prompt-composer-0.1.0.vsix
+```
+
+Or in VS Code: Extensions view → **⋯** → **Install from VSIX…** and pick the file. What changed in each version: [CHANGELOG.md](CHANGELOG.md).
+
 ## Develop and test
 
 ```bash
