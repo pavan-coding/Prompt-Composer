@@ -12,16 +12,50 @@ Write prompts for Claude Code in VS Code, in a rich Markdown editor, and never m
 - **A searchable library:** prompts are saved in `.prompt-composer/YYYY-MM/` in your project, git-ignored and hidden from VS Code's Explorer, Search and Quick Open automatically. The panel lists Pinned prompts and this month by day, and its search covers every month.
 - **Plain Markdown on disk**, in `.prompt` files (their own extension, so Markdown editors and `*.md` settings leave them alone), with `@path` mentions Claude Code understands, and **Copy as Prompt** turns pasted images into `@paths` too.
 - **Saving works like any VS Code file:** Ctrl+S, or VS Code's own Auto Save.
+- **Claude Code's Ctrl+G opens here:** with the helper below, pressing Ctrl+G in Claude Code opens the prompt you're typing in this editor; close the tab and the text is back in Claude.
 
 ## Install
 
-Each release is kept in [`releases/`](releases/), one folder per version, with its `.vsix` and release notes. To install v0.1.0:
+Each release is kept in [`releases/`](releases/), one folder per version, with its `.vsix` and release notes. To install v0.2.0:
 
 ```bash
-code --install-extension releases/v0.1.0/prompt-composer-0.1.0.vsix
+code --install-extension releases/v0.2.0/prompt-composer-0.2.0.vsix
 ```
 
 Or in VS Code: Extensions view → **⋯** → **Install from VSIX…** and pick the file. What changed in each version: [CHANGELOG.md](CHANGELOG.md).
+
+## Claude Code: Ctrl+G opens the prompt here
+
+Claude Code's Ctrl+G opens the prompt you're typing in your editor (`$VISUAL`, else `$EDITOR`). With the helper [`claude-code/claude-prompt-composer`](claude-code/claude-prompt-composer) as that editor, it opens in Prompt Composer instead, and the text goes back to Claude when you close the tab.
+
+**Set up (Linux and macOS, once):**
+
+1. Copy the helper onto your `PATH` and make it executable:
+
+   ```bash
+   install -m 755 claude-code/claude-prompt-composer ~/.local/bin/
+   ```
+
+2. Make it Claude Code's editor in `~/.claude/settings.json`, then start Claude again:
+
+   ```json
+   { "env": { "VISUAL": "/home/<you>/.local/bin/claude-prompt-composer" } }
+   ```
+
+**Using it:**
+- Press **Ctrl+G** in Claude Code. The prompt opens in VS Code, in the window open on Claude's folder (or a folder above it). If no window has it, it opens in the window you used last; with no window at all, in a new one on Claude's folder.
+- Edit it like any prompt: `@` mentions, images, formatting. Every change is written straight back; there's nothing to save.
+- **Close the tab** and the text is back in Claude's input, ready to send.
+- **Esc** or **Ctrl+C** in the terminal cancels: Claude keeps the prompt it had.
+
+**What it doesn't touch:**
+- Claude's prompt stays in Claude's temp folder as `claude-prompt-<id>/Claude - <folder>.prompt`. It isn't saved in `.prompt-composer/`, isn't listed in the panel and never asks to be saved. Your own prompts work exactly as before.
+- Any other file sent to `$VISUAL` (a git commit message, say) still goes to `$EDITOR`.
+
+**Details:**
+- `@paths` are written relative to the folder Claude runs in. When VS Code is open on another folder, they're rewritten for Claude: relative when the file is inside Claude's folder, absolute otherwise. Images become `@paths` too, as with Copy as Prompt.
+- An untouched prompt comes back exactly as Claude wrote it.
+- Each VS Code window lists its folder in `~/.cache/prompt-composer/windows/` (one small file per window, removed when it closes); that's how the helper finds the right window.
 
 ## Develop and test
 

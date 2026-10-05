@@ -1,7 +1,9 @@
 // Integration tests: run inside a real Extension Development Host on a copy of test/fixtures/workspace.
 // Each test name starts with its case ID from docs/TEST-CASES.md.
 import * as assert from 'node:assert/strict';
+import { spawn } from 'node:child_process';
 import * as fs from 'node:fs';
+import * as os from 'node:os';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 import type { PromptComposerApi } from '../../src/extension';
@@ -465,6 +467,118 @@ suite('Opening prompt files', () => {
     assert.equal(ed.document.languageId, 'markdown', 'shown as Markdown');
     assert.equal(ed.document.getText(), '# As text\n');
     assert.equal(ed.document.isDirty, false);
+  });
+});
+
+suite('Claude Code prompt (Ctrl+G)', () => {
+  teardown(closeAll);
+
+  /** What the claude-prompt-composer helper makes: claude-prompt-<id>/<name>.prompt, and .cwd when given. */
+  function claudeFile(text: string, cwd?: string): string {
+    const work = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'pc-claude-')), 'claude-prompt-1234');
+    fs.mkdirSync(work);
+    if (cwd !== undefined) fs.writeFileSync(path.join(work, '.cwd'), cwd);
+    const file = path.join(work, 'Claude - ws.prompt');
+    fs.writeFileSync(file, text);
+    return file;
+  }
+  const done = (file: string) => fs.existsSync(path.join(path.dirname(file), '.done'));
+  const read = (file: string) => fs.readFileSync(file, 'utf8');
+  const claudeDoc = () => api.editors.allDocs().find((d) => d.claude);
+  const claudeTab = () => vscode.window.tabGroups.all.flatMap((g) => g.tabs)
+    .find((t) => t.input instanceof vscode.TabInputCustom && t.input.viewType === 'promptComposer.claude');
+  async function openClaude(file: string): Promise<PromptDoc> {
+    await vscode.commands.executeCommand('vscode.open', vscode.Uri.file(file));
+    return waitFor(() => { const d = claudeDoc(); return d?.loaded ? d : undefined; }, 'Claude prompt to load', 15_000);
+  }
+  async function closeClaude(file: string): Promise<void> {
+    await vscode.window.tabGroups.close(claudeTab()!);
+    await waitFor(() => done(file), '.done');
+  }
+
+  test('CL-01 a Claude prompt file opens in the composer, in its own tab that stays open', async () => {
+    const file = claudeFile('Fix the login bug\n');
+    const doc = await openClaude(file);
+    await sleep(500);
+    const tab = claudeTab();
+    assert.ok(tab, 'a custom editor tab for the file');
+    assert.equal((tab.input as vscode.TabInputCustom).uri.fsPath, file);
+    assert.equal(tab.isPreview, false, 'pinned: the next single-clicked file must not replace it');
+    assert.equal(tab.label, 'Fix the login bug');
+    assert.equal(doc.panel?.active, true);
+    assert.equal(doc.rel, undefined);
+    assert.equal(doc.current.trim(), 'Fix the login bug');
+    assert.equal(done(file), false);
+  });
+
+  test("CL-02 closing an untouched prompt hands back Claude's exact text", async () => {
+    const original = 'Look at *this*  and  that\n\n\n- a\n* b\n[Pasted text #1 +3 lines]\n';
+    const file = claudeFile(original);
+    await openClaude(file);
+    await closeClaude(file);
+    assert.equal(read(file), original);
+  });
+
+  test('CL-03 edits go straight to the file, images as @paths; nothing reaches the library, drafts or a save question', async () => {
+    const before = promptFiles().length;
+    const file = claudeFile('Draft\n');
+    const doc = await openClaude(file);
+    fs.mkdirSync(path.join(store(), 'images'), { recursive: true });
+    fs.writeFileSync(path.join(store(), 'images', 'claude-shot.png'), 'png');
+    doc.sessionImages.add('.prompt-composer/images/claude-shot.png'); // as if pasted into this prompt
+    await setContent(doc, 'Explain @src/server/auth.ts\n\n![shot](../images/claude-shot.png)\n');
+    await waitFor(() => read(file).includes('@.prompt-composer/images/claude-shot.png'), 'edit written to the file');
+    assert.match(read(file), /^Explain @src\/server\/auth\.ts/);
+    assert.equal(doc.dirty, false);
+    assert.ok(!api.editors.libraryItems().some((i) => i.id === `doc:${doc.id}`), 'not in the panel');
+    api.editors.writeDraftsNow();
+    assert.ok(!(doc.id in api.editors.drafts()), 'not backed up as a draft');
+    const asked = answer('Save');
+    await closeClaude(file);
+    await sleep(200);
+    assert.equal(asked.length, 0, 'no save question');
+    assert.equal(promptFiles().length, before, 'nothing saved in .prompt-composer/');
+    assert.ok(fs.existsSync(path.join(store(), 'images', 'claude-shot.png')), 'its images stay for Claude');
+  });
+
+  test("CL-04 @paths are made relative to Claude's folder when VS Code is open on another one", async () => {
+    const file = claudeFile('Draft\n', path.join(ws(), 'src'));
+    const doc = await openClaude(file);
+    await setContent(doc, 'See @src/server/auth.ts and @README.md, not @team\n');
+    const readme = path.join(ws(), 'README.md').split(path.sep).join('/');
+    await waitFor(() => read(file).includes('@server/auth.ts'), 'rebased @paths');
+    assert.ok(read(file).includes(`@${readme}`), read(file));
+    assert.ok(read(file).includes('@team'), read(file));
+  });
+
+  test("CL-05 Revert goes back to Claude's text; Ctrl+S just writes", async () => {
+    const file = claudeFile('Original words\n');
+    const doc = await openClaude(file);
+    await setContent(doc, 'Changed words\n');
+    await waitFor(() => read(file).includes('Changed words'), 'edit written');
+    assert.ok(await api.editors.save(doc));
+    assert.equal(promptFiles().filter((f) => f.includes('changed-words')).length, 0);
+    doc.panel!.reveal();
+    await waitFor(() => api.editors.activeDoc === doc, 'active prompt');
+    await vscode.commands.executeCommand('promptComposer.revert');
+    await waitFor(() => read(file) === 'Original words\n', "Claude's text back");
+  });
+
+  test('CL-06 `code --wait` returns only when the Claude prompt tab is closed', async function () {
+    const cli = path.join(path.dirname(process.execPath), 'bin', process.platform === 'win32' ? 'code.cmd' : 'code');
+    if (!fs.existsSync(cli)) this.skip();
+    // The CLI finds a running VS Code by its user-data folder: this test window's, never your own VS Code.
+    const userData = path.resolve(api.context.globalStorageUri.fsPath, '..', '..', '..');
+    const env = Object.fromEntries(Object.entries(process.env).filter(([k]) => !/^(VSCODE_|ELECTRON_)/.test(k)));
+    const file = claudeFile('Wait for me\n');
+    const child = spawn(cli, ['--user-data-dir', userData, '--wait', file], { env, stdio: 'ignore' });
+    let exited = false;
+    child.on('exit', () => { exited = true; });
+    await waitFor(() => claudeDoc()?.loaded, 'Claude prompt to open', 20_000);
+    await sleep(1500);
+    assert.equal(exited, false, 'still waiting while the tab is open');
+    await closeClaude(file);
+    await waitFor(() => exited, '`code --wait` to return');
   });
 });
 

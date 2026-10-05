@@ -10,9 +10,13 @@ Every behaviour in [PLAN.md](../PLAN.md) has a case here.
 
 Automated tests include the case ID in their name.
 
-**Result** is filled in by the last full run (2026-10-03, Windows 11, VS Code 1.140): ✅ pass, ❌ fail, ⚠️ works but misses a target, 👤 manual only.
+**Result** is filled in by the last full run (2026-10-03, Windows 11, VS Code 1.140): ✅ pass, ❌ fail, ⚠️ works but misses a target, 👤 manual only. The CL cases come from the v0.2.0 run (2026-10-05, Ubuntu, VS Code 1.139.1).
 
 Totals: 89 unit tests, 52 integration tests, 40 end-to-end tests passed, 1 end-to-end test skipped (SV-05, see its row).
+
+v0.2.0 run (2026-10-05, Ubuntu, VS Code 1.139.1): 105 unit tests (16 new) and 58 integration tests (6 new) passed; 39 end-to-end tests (CL-08 new) passed, 1 skipped (SV-05) and 2 failed. The exceptions are all in code v0.2.0 didn't change:
+- PN-03 and PN-05 fail end-to-end on this machine. v0.1.0 fails them the same way here, so they're not caused by v0.2.0.
+- The speed benchmarks MN-12 and PN-13 take 31–34 ms against a 30 ms target in about one run in three.
 
 ## ST: storage on disk
 
@@ -144,6 +148,21 @@ Totals: 89 unit tests, 52 integration tests, 40 end-to-end tests passed, 1 end-t
 | CE-03 | Open as Text | Opens the file in VS Code's text editor, read-only | I | ✅ |
 | CE-04 | Open an already-open prompt | Focuses its tab; no second tab | I | ✅ |
 | CE-05 | Restart with a prompt open | Comes back in the composer | E | ✅ |
+
+## CL: Claude Code's Ctrl+G
+
+| ID | Case | Expected | Layer | Result |
+|---|---|---|---|---|
+| CL-01 | Open `<tmp>/claude-prompt-<id>/<name>.prompt` (what the helper runs `code --wait` on) | Opens in the composer in the file's own tab, which stays open, is pinned (not a preview) and shows the prompt's title. Not saved in `.prompt-composer/` | I | ✅ |
+| CL-02 | Close it without editing | The file keeps Claude's exact text (byte for byte, even where the editor would write Markdown differently); `.done` is written | I | ✅ |
+| CL-03 | Edit it | Every edit is written to the file, images as `@paths`. Never dirty: no dot, no save question, no draft backup, not in the panel, nothing in `.prompt-composer/`; images pasted into it stay after closing | I | ✅ |
+| CL-04 | Claude runs in another folder than VS Code's (`.cwd`) | `@paths` of existing files become relative to Claude's folder when inside it, absolute otherwise (forward slashes, quoted when needed); `@words` that aren't files, emails and code are untouched | U, I | ✅ |
+| CL-05 | Revert Prompt; Ctrl+S | Revert goes back to Claude's text; Ctrl+S only writes the file | I | ✅ |
+| CL-06 | `code --wait` on the file | Keeps waiting while the tab is open; returns when it's closed | I | ✅ |
+| CL-07 | The helper `claude-code/claude-prompt-composer` (with a stand-in `code`) | Copies Claude's `.md` to the `.prompt` without Claude's last-response header and writes `.cwd`; picks the window on Claude's folder or above, else the one used last (its workspace file), else Claude's folder; drops entries of processes that are gone; hands back the edited text after `.done` (or after 3 s without it); Esc or Ctrl+C in the terminal cancels without touching Claude's file, an arrow key doesn't; a failing `code` exits 1 with Claude's file untouched; other files go to `$EDITOR` | U | ✅ |
+| CL-08 | Type in it, with Ctrl+B | Formats the text (the side bar doesn't toggle); the file follows each edit; closing the tab asks nothing, writes `.done` and leaves nothing behind | E | ✅ |
+| CL-10 | The whole path with the packaged `.vsix` (`test/e2e/claude-smoke.mjs`): the helper run from a subfolder, the real `code` CLI, a throwaway VS Code | The window registers itself (folder, then what `code` opens); the helper finds it through the folder above; the prompt opens there titled with its first line; the helper waits while the tab is open; typing then Ctrl+W hands back the edited text and the helper cleans up | E | ✅ |
+| CL-09 | Ctrl+G in a real Claude Code session | The prompt opens in VS Code; closing the tab puts the edited text in Claude's input; Esc in the terminal keeps the old prompt | M | 👤 |
 
 ## MN: `@` mentions and the file index
 

@@ -6,6 +6,8 @@ import { PromptStore } from './store/promptStore';
 import { Library } from './store/library';
 import { EditorManager, PromptDoc } from './editor/editorManager';
 import { REDIRECT_VIEW_TYPE, RedirectEditorProvider } from './editor/redirectEditor';
+import { CLAUDE_VIEW_TYPE, ClaudeEditorProvider } from './claude/claudeEditor';
+import { WindowRegistry } from './claude/windowRegistry';
 import { LIBRARY_VIEW_ID, LibraryView } from './library/libraryView';
 import type { PanelShow } from './common/protocol';
 import { UntitledSwap } from './untitled/untitledSwap';
@@ -20,6 +22,7 @@ import { startTestBridge } from './testBridge';
 interface RowContext { promptId?: string }
 
 export interface PromptComposerApi {
+  context: vscode.ExtensionContext;
   store: PromptStore;
   library: Library;
   editors: EditorManager;
@@ -39,11 +42,18 @@ export function activate(context: vscode.ExtensionContext): PromptComposerApi | 
   const folder = vscode.workspace.workspaceFolders?.[0];
   const statusBar = new PromptStatusBar();
   context.subscriptions.push(statusBar);
+  const testing = context.extensionMode === vscode.ExtensionMode.Test || !!process.env.PROMPT_COMPOSER_TEST;
+  // Claude Code's prompt (Ctrl+G) is edited in its file's own tab: `code --wait` returns when that tab closes.
+  const claudeEditor = (editors: EditorManager | undefined) =>
+    vscode.window.registerCustomEditorProvider(CLAUDE_VIEW_TYPE, new ClaudeEditorProvider(editors), {
+      supportsMultipleEditorsPerDocument: false,
+      webviewOptions: { retainContextWhenHidden: true, enableFindWidget: true },
+    });
 
   if (!folder || folder.uri.scheme !== 'file') {
     // No folder: the panel explains, commands say why they can't run.
     const view = new LibraryView(context, undefined, undefined, { newPrompt: () => void noFolder(), deletePrompt: async () => undefined, setShow: async () => undefined });
-    context.subscriptions.push(view, vscode.window.registerWebviewViewProvider(LIBRARY_VIEW_ID, view));
+    context.subscriptions.push(view, vscode.window.registerWebviewViewProvider(LIBRARY_VIEW_ID, view), claudeEditor(undefined));
     for (const id of ['newPrompt', 'focusSearch', 'revealFolder', 'revealFolderInFinder', 'collapseAll', 'showToday', 'showThisMonth', 'showAllMonths', 'newTextFile']) {
       context.subscriptions.push(vscode.commands.registerCommand(`promptComposer.${id}`, () =>
         id === 'newTextFile' ? vscode.commands.executeCommand('workbench.action.files.newUntitledFile') : noFolder()));
@@ -69,7 +79,10 @@ export function activate(context: vscode.ExtensionContext): PromptComposerApi | 
     vscode.window.registerCustomEditorProvider(REDIRECT_VIEW_TYPE, new RedirectEditorProvider(editors, store), {
       supportsMultipleEditorsPerDocument: false,
     }),
+    claudeEditor(editors),
   );
+  // Tells Claude Code's Ctrl+G helper that this window is open on this folder (tests leave the real list alone).
+  if (!testing) context.subscriptions.push(new WindowRegistry(folder.uri.fsPath, vscode.workspace.workspaceFile, log));
   // Loading the library also lets the editors know titles of saved prompts.
   void library.ensureLoaded();
 
@@ -212,12 +225,12 @@ export function activate(context: vscode.ExtensionContext): PromptComposerApi | 
   // Swallows workbench shortcuts (Ctrl+B, Ctrl+E…) while the editor has focus; the editor handles the key itself.
   reg('noop', () => undefined);
 
-  const api: PromptComposerApi = { store, library, editors, libraryView, untitled, index, images, statusBar, shell, deletePrompt };
+  const api: PromptComposerApi = { context, store, library, editors, libraryView, untitled, index, images, statusBar, shell, deletePrompt };
   if (context.extensionMode !== vscode.ExtensionMode.Production && process.env.PROMPT_COMPOSER_E2E_PORT) {
     context.subscriptions.push(startTestBridge(api, Number(process.env.PROMPT_COMPOSER_E2E_PORT), log));
   }
   log.info(`activated for ${folder.uri.fsPath}`);
-  return context.extensionMode === vscode.ExtensionMode.Test || process.env.PROMPT_COMPOSER_TEST ? api : undefined;
+  return testing ? api : undefined;
 }
 
 async function noFolder(): Promise<void> {

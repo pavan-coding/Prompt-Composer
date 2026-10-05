@@ -52,6 +52,7 @@ export async function launch({ ws, settings = {}, userData, scale = 1.25, size =
   const env = { ...process.env };
   for (const k of Object.keys(env)) if (/^(VSCODE_|ELECTRON_)/i.test(k)) delete env[k];
   env.PROMPT_COMPOSER_E2E_PORT = String(port);
+  env.XDG_CACHE_HOME = join(tmp, 'cache'); // the window registry for Claude Code's Ctrl+G: never your real one
   const app = await _electron.launch({
     executablePath: exe,
     env,

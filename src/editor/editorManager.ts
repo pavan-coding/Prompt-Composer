@@ -1,6 +1,7 @@
 // Prompt tabs: one webview panel per prompt, user-controlled saving (Ctrl+S and VS Code's files.autoSave),
 // a dirty marker, a save question when a changed prompt is closed, and unsaved changes that survive reloads.
 import * as vscode from 'vscode';
+import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import type {
@@ -14,6 +15,8 @@ import type { LibraryItem } from '../store/libraryModel';
 import type { FileIndex } from '../mentions/fileIndex';
 import { resolveMentions } from '../mentions/resolve';
 import type { ImageStore } from '../images/imageStore';
+import { CLAUDE_DONE_FILE } from '../claude/claudeEditor';
+import { rebaseMentions } from '../claude/claudePaths';
 import { webviewHtml } from './html';
 
 export const EDITOR_VIEW_TYPE = 'promptComposer.editor';
@@ -21,6 +24,24 @@ const DRAFTS_KEY = 'promptComposer.drafts';
 const UNTITLED = 'Untitled prompt';
 
 interface Draft { rel?: string; created: number; markdown: string }
+
+/** Claude Code's prompt (Ctrl+G, see claude/claudeEditor.ts): where it's written and for which folder. */
+export interface ClaudeTarget {
+  /** The .prompt file in Claude's temp folder. */
+  file: string;
+  /** Claude's working directory, which @paths are made relative to. */
+  cwd: string | undefined;
+}
+
+interface ClaudeState extends ClaudeTarget {
+  /** The editor's first Markdown: until the prompt is edited, the file keeps Claude's exact text. */
+  baseline: string | undefined;
+  /** What's in the file (or being written). */
+  written: string;
+  writing: Promise<void>;
+  /** Which @paths exist, so typing doesn't stat the same files again. */
+  exists: Map<string, boolean>;
+}
 
 export class PromptDoc {
   rel: string | undefined;
@@ -49,6 +70,11 @@ export class PromptDoc {
     for (const r of this.loadWaiters.splice(0)) r();
   }
   lastQuery: { seq: number; query: string } | undefined;
+  /**
+   * Set for Claude Code's prompt: every edit goes straight to Claude's file, so it's never dirty, never in the
+   * library and never a draft. savedText holds Claude's original text (Revert goes back to it).
+   */
+  claude: ClaudeState | undefined;
 
   constructor(readonly id: string, rel: string | undefined, readonly created: Date, savedText: string, current = savedText) {
     this.rel = rel;
@@ -58,7 +84,7 @@ export class PromptDoc {
   }
 
   get dirty(): boolean {
-    return this.current !== this.savedText;
+    return !this.claude && this.current !== this.savedText;
   }
 
   get displayTitle(): string {
@@ -173,7 +199,7 @@ export class EditorManager implements vscode.Disposable {
     }
     for (const doc of this.docs.values()) {
       if (doc.rel && seen.has(doc.rel)) continue;
-      if (!doc.rel && !doc.current.trim()) continue;
+      if (doc.claude || (!doc.rel && !doc.current.trim())) continue;
       items.push({
         id: doc.rel ?? `doc:${doc.id}`,
         title: doc.title,
@@ -298,6 +324,19 @@ export class EditorManager implements vscode.Disposable {
     doc.focusOnLoad = !!opts.focus;
     this.createPanel(doc, opts.viewColumn ?? vscode.ViewColumn.Active, true);
     this.changed();
+  }
+
+  /** Claude Code's prompt, in the tab VS Code made for its file (so `code --wait` follows that tab). */
+  openClaude(panel: vscode.WebviewPanel, target: ClaudeTarget, text: string): PromptDoc {
+    const doc = new PromptDoc(randomUUID(), undefined, new Date(), text);
+    doc.claude = { ...target, baseline: undefined, written: text, writing: Promise.resolve(), exists: new Map() };
+    this.docs.set(doc.id, doc);
+    doc.focusOnLoad = true;
+    this.attach(doc, panel);
+    // A preview tab would be replaced (closed, so sent to Claude) by the next file you single-click.
+    if (panel.active) void vscode.commands.executeCommand('workbench.action.keepEditor');
+    this.changed();
+    return doc;
   }
 
   private previewPanel(): vscode.WebviewPanel | undefined {
@@ -450,6 +489,10 @@ export class EditorManager implements vscode.Disposable {
             this.post(doc, { type: 'focus', at: 'end' });
           }
         }
+        if (doc.claude) {
+          if (doc.claude.baseline === undefined) doc.claude.baseline = m.markdown;
+          else void this.writeClaude(doc);
+        }
         if (doc.dirty && doc.preview) this.pin(doc);
         if (oldTitle !== doc.title || wasDirty !== doc.dirty) this.updateTab(doc);
         if (doc === this.active) this.deps.onActiveChanged(doc);
@@ -593,6 +636,11 @@ export class EditorManager implements vscode.Disposable {
       const { markdown, title } = await this.flush(doc);
       doc.current = markdown;
       doc.title = title;
+      if (doc.claude) {
+        // already written as you type; Ctrl+S just makes sure the last edit is on disk
+        await this.writeClaude(doc);
+        return true;
+      }
       const { store, library } = this.deps;
       if (!doc.rel && !markdown.trim()) {
         // nothing to save in a new, empty prompt
@@ -643,10 +691,12 @@ export class EditorManager implements vscode.Disposable {
     if (mode === 'afterDelay' && doc.dirty) doc.autoSaveTimer = setTimeout(() => void this.save(doc, 'auto'), Math.max(0, delay));
   }
 
-  /** Throw away unsaved changes and reload the saved file. */
+  /** Throw away unsaved changes and reload the saved file (Claude's prompt: go back to Claude's text). */
   async revert(doc: PromptDoc): Promise<void> {
     let saved = '';
-    if (doc.rel) {
+    if (doc.claude) {
+      saved = doc.savedText;
+    } else if (doc.rel) {
       try { saved = await this.deps.store.read(doc.rel); } catch { saved = doc.savedText; }
     }
     doc.savedText = saved;
@@ -669,7 +719,11 @@ export class EditorManager implements vscode.Disposable {
     if (this.active === doc) this.setActive(undefined);
     for (const resolve of doc.flushes.values()) resolve({ markdown: doc.current, title: doc.title });
     doc.flushes.clear();
-    if (doc.dirty && (doc.rel || doc.current.trim())) {
+    if (doc.claude) {
+      // Claude Code's prompt is on disk already; tell the helper it's final. Its images stay: Claude reads them.
+      void this.finishClaude(doc);
+      this.forget(doc);
+    } else if (doc.dirty && (doc.rel || doc.current.trim())) {
       this.closeQueue.push(doc);
       clearTimeout(this.closeTimer);
       // Close All closes several tabs in one go: ask once for all of them.
@@ -731,6 +785,42 @@ export class EditorManager implements vscode.Disposable {
       if (imagePaths(d.current, d.dir).includes(wsPath)) return true;
     }
     return false;
+  }
+
+  // ------------------------------------------------------------------ Claude Code's prompt (Ctrl+G)
+
+  /** The text Claude gets: its own text until the prompt is edited, then the Markdown with images and @paths for Claude. */
+  claudeText(doc: PromptDoc): string {
+    const c = doc.claude!;
+    if (c.baseline === undefined || doc.current === c.baseline) return doc.savedText;
+    const { text } = toPromptText(doc.current, doc.dir);
+    if (!c.cwd) return text;
+    return rebaseMentions(text, this.deps.store.workspaceRoot, c.cwd, (abs) => {
+      let found = c.exists.get(abs);
+      if (found === undefined) c.exists.set(abs, (found = fs.existsSync(abs)));
+      return found;
+    });
+  }
+
+  /** Write Claude's file (one write at a time, in order). Its folder is gone if the helper was cancelled. */
+  private writeClaude(doc: PromptDoc): Promise<void> {
+    const c = doc.claude!;
+    const text = this.claudeText(doc);
+    if (text !== c.written) {
+      c.written = text;
+      c.writing = c.writing.then(() => fs.promises.writeFile(c.file, text)).catch((e: NodeJS.ErrnoException) => {
+        if (e.code !== 'ENOENT') this.deps.log.warn(`couldn't write Claude's prompt: ${e}`);
+      });
+    }
+    return c.writing;
+  }
+
+  /** The tab was closed: write the last edit, then .done so the helper hands the file back to Claude. */
+  private async finishClaude(doc: PromptDoc): Promise<void> {
+    await this.writeClaude(doc);
+    try {
+      await fs.promises.writeFile(path.join(path.dirname(doc.claude!.file), CLAUDE_DONE_FILE), '');
+    } catch { /* the helper was cancelled and removed its folder */ }
   }
 
   // ------------------------------------------------------------------ drafts backup (survive reloads)

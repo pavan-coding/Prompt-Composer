@@ -2,7 +2,7 @@
   "name": "prompt-composer",
   "displayName": "Prompt Composer",
   "description": "Write prompts for Claude Code in a rich Markdown editor, with @ file mentions, images and a searchable prompt library.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "pavan-coding",
   "repository": {
     "type": "git",
@@ -276,22 +276,22 @@
       "editor/title": [
         {
           "command": "promptComposer.copyAsPrompt",
-          "when": "activeWebviewPanelId == 'promptComposer.editor'",
+          "when": "(activeWebviewPanelId == 'promptComposer.editor' || activeCustomEditorId == 'promptComposer.claude')",
           "group": "navigation@1"
         },
         {
           "command": "promptComposer.openAsText",
-          "when": "activeWebviewPanelId == 'promptComposer.editor' && promptComposer.activeSaved",
+          "when": "(activeWebviewPanelId == 'promptComposer.editor' || activeCustomEditorId == 'promptComposer.claude') && promptComposer.activeSaved",
           "group": "navigation@2"
         },
         {
           "command": "promptComposer.revert",
-          "when": "activeWebviewPanelId == 'promptComposer.editor'",
+          "when": "(activeWebviewPanelId == 'promptComposer.editor' || activeCustomEditorId == 'promptComposer.claude')",
           "group": "1_file@1"
         },
         {
           "command": "promptComposer.insertImage",
-          "when": "activeWebviewPanelId == 'promptComposer.editor'",
+          "when": "(activeWebviewPanelId == 'promptComposer.editor' || activeCustomEditorId == 'promptComposer.claude')",
           "group": "2_insert@1"
         }
       ],
@@ -350,27 +350,27 @@
         },
         {
           "command": "promptComposer.copyAsPrompt",
-          "when": "activeWebviewPanelId == 'promptComposer.editor'"
+          "when": "(activeWebviewPanelId == 'promptComposer.editor' || activeCustomEditorId == 'promptComposer.claude')"
         },
         {
           "command": "promptComposer.save",
-          "when": "activeWebviewPanelId == 'promptComposer.editor'"
+          "when": "(activeWebviewPanelId == 'promptComposer.editor' || activeCustomEditorId == 'promptComposer.claude')"
         },
         {
           "command": "promptComposer.revert",
-          "when": "activeWebviewPanelId == 'promptComposer.editor'"
+          "when": "(activeWebviewPanelId == 'promptComposer.editor' || activeCustomEditorId == 'promptComposer.claude')"
         },
         {
           "command": "promptComposer.openAsText",
-          "when": "activeWebviewPanelId == 'promptComposer.editor'"
+          "when": "(activeWebviewPanelId == 'promptComposer.editor' || activeCustomEditorId == 'promptComposer.claude')"
         },
         {
           "command": "promptComposer.insertImage",
-          "when": "activeWebviewPanelId == 'promptComposer.editor'"
+          "when": "(activeWebviewPanelId == 'promptComposer.editor' || activeCustomEditorId == 'promptComposer.claude')"
         },
         {
           "command": "promptComposer.goToBrokenMention",
-          "when": "activeWebviewPanelId == 'promptComposer.editor'"
+          "when": "(activeWebviewPanelId == 'promptComposer.editor' || activeCustomEditorId == 'promptComposer.claude')"
         },
         {
           "command": "promptComposer.noop",
@@ -378,7 +378,7 @@
         },
         {
           "command": "promptComposer.insertLink",
-          "when": "activeWebviewPanelId == 'promptComposer.editor'"
+          "when": "(activeWebviewPanelId == 'promptComposer.editor' || activeCustomEditorId == 'promptComposer.claude')"
         }
       ]
     },
@@ -387,7 +387,7 @@
         "command": "promptComposer.save",
         "key": "ctrl+s",
         "mac": "cmd+s",
-        "when": "activeWebviewPanelId == 'promptComposer.editor'"
+        "when": "(activeWebviewPanelId == 'promptComposer.editor' || activeCustomEditorId == 'promptComposer.claude')"
       },
       {
         "command": "promptComposer.newTextFile",
@@ -399,103 +399,103 @@
         "command": "promptComposer.insertLink",
         "key": "ctrl+k",
         "mac": "cmd+k",
-        "when": "promptComposer.editorFocused && activeWebviewPanelId == 'promptComposer.editor'"
+        "when": "promptComposer.editorFocused && (activeWebviewPanelId == 'promptComposer.editor' || activeCustomEditorId == 'promptComposer.claude')"
       },
       {
         "command": "promptComposer.noop",
         "key": "ctrl+b",
         "mac": "cmd+b",
-        "when": "promptComposer.editorFocused && activeWebviewPanelId == 'promptComposer.editor'"
+        "when": "promptComposer.editorFocused && (activeWebviewPanelId == 'promptComposer.editor' || activeCustomEditorId == 'promptComposer.claude')"
       },
       {
         "command": "promptComposer.noop",
         "key": "ctrl+i",
         "mac": "cmd+i",
-        "when": "promptComposer.editorFocused && activeWebviewPanelId == 'promptComposer.editor'"
+        "when": "promptComposer.editorFocused && (activeWebviewPanelId == 'promptComposer.editor' || activeCustomEditorId == 'promptComposer.claude')"
       },
       {
         "command": "promptComposer.noop",
         "key": "ctrl+e",
         "mac": "cmd+e",
-        "when": "promptComposer.editorFocused && activeWebviewPanelId == 'promptComposer.editor'"
+        "when": "promptComposer.editorFocused && (activeWebviewPanelId == 'promptComposer.editor' || activeCustomEditorId == 'promptComposer.claude')"
       },
       {
         "command": "promptComposer.noop",
         "key": "ctrl+shift+s",
         "mac": "cmd+shift+s",
-        "when": "promptComposer.editorFocused && activeWebviewPanelId == 'promptComposer.editor'"
+        "when": "promptComposer.editorFocused && (activeWebviewPanelId == 'promptComposer.editor' || activeCustomEditorId == 'promptComposer.claude')"
       },
       {
         "command": "promptComposer.noop",
         "key": "ctrl+shift+b",
         "mac": "cmd+shift+b",
-        "when": "promptComposer.editorFocused && activeWebviewPanelId == 'promptComposer.editor'"
+        "when": "promptComposer.editorFocused && (activeWebviewPanelId == 'promptComposer.editor' || activeCustomEditorId == 'promptComposer.claude')"
       },
       {
         "command": "promptComposer.noop",
         "key": "ctrl+shift+7",
         "mac": "cmd+shift+7",
-        "when": "promptComposer.editorFocused && activeWebviewPanelId == 'promptComposer.editor'"
+        "when": "promptComposer.editorFocused && (activeWebviewPanelId == 'promptComposer.editor' || activeCustomEditorId == 'promptComposer.claude')"
       },
       {
         "command": "promptComposer.noop",
         "key": "ctrl+shift+8",
         "mac": "cmd+shift+8",
-        "when": "promptComposer.editorFocused && activeWebviewPanelId == 'promptComposer.editor'"
+        "when": "promptComposer.editorFocused && (activeWebviewPanelId == 'promptComposer.editor' || activeCustomEditorId == 'promptComposer.claude')"
       },
       {
         "command": "promptComposer.noop",
         "key": "ctrl+shift+9",
         "mac": "cmd+shift+9",
-        "when": "promptComposer.editorFocused && activeWebviewPanelId == 'promptComposer.editor'"
+        "when": "promptComposer.editorFocused && (activeWebviewPanelId == 'promptComposer.editor' || activeCustomEditorId == 'promptComposer.claude')"
       },
       {
         "command": "promptComposer.noop",
         "key": "ctrl+alt+c",
         "mac": "cmd+alt+c",
-        "when": "promptComposer.editorFocused && activeWebviewPanelId == 'promptComposer.editor'"
+        "when": "promptComposer.editorFocused && (activeWebviewPanelId == 'promptComposer.editor' || activeCustomEditorId == 'promptComposer.claude')"
       },
       {
         "command": "promptComposer.noop",
         "key": "ctrl+alt+0",
         "mac": "cmd+alt+0",
-        "when": "promptComposer.editorFocused && activeWebviewPanelId == 'promptComposer.editor'"
+        "when": "promptComposer.editorFocused && (activeWebviewPanelId == 'promptComposer.editor' || activeCustomEditorId == 'promptComposer.claude')"
       },
       {
         "command": "promptComposer.noop",
         "key": "ctrl+alt+1",
         "mac": "cmd+alt+1",
-        "when": "promptComposer.editorFocused && activeWebviewPanelId == 'promptComposer.editor'"
+        "when": "promptComposer.editorFocused && (activeWebviewPanelId == 'promptComposer.editor' || activeCustomEditorId == 'promptComposer.claude')"
       },
       {
         "command": "promptComposer.noop",
         "key": "ctrl+alt+2",
         "mac": "cmd+alt+2",
-        "when": "promptComposer.editorFocused && activeWebviewPanelId == 'promptComposer.editor'"
+        "when": "promptComposer.editorFocused && (activeWebviewPanelId == 'promptComposer.editor' || activeCustomEditorId == 'promptComposer.claude')"
       },
       {
         "command": "promptComposer.noop",
         "key": "ctrl+alt+3",
         "mac": "cmd+alt+3",
-        "when": "promptComposer.editorFocused && activeWebviewPanelId == 'promptComposer.editor'"
+        "when": "promptComposer.editorFocused && (activeWebviewPanelId == 'promptComposer.editor' || activeCustomEditorId == 'promptComposer.claude')"
       },
       {
         "command": "promptComposer.noop",
         "key": "ctrl+alt+4",
         "mac": "cmd+alt+4",
-        "when": "promptComposer.editorFocused && activeWebviewPanelId == 'promptComposer.editor'"
+        "when": "promptComposer.editorFocused && (activeWebviewPanelId == 'promptComposer.editor' || activeCustomEditorId == 'promptComposer.claude')"
       },
       {
         "command": "promptComposer.noop",
         "key": "ctrl+alt+5",
         "mac": "cmd+alt+5",
-        "when": "promptComposer.editorFocused && activeWebviewPanelId == 'promptComposer.editor'"
+        "when": "promptComposer.editorFocused && (activeWebviewPanelId == 'promptComposer.editor' || activeCustomEditorId == 'promptComposer.claude')"
       },
       {
         "command": "promptComposer.noop",
         "key": "ctrl+alt+6",
         "mac": "cmd+alt+6",
-        "when": "promptComposer.editorFocused && activeWebviewPanelId == 'promptComposer.editor'"
+        "when": "promptComposer.editorFocused && (activeWebviewPanelId == 'promptComposer.editor' || activeCustomEditorId == 'promptComposer.claude')"
       }
     ],
     "languages": [
@@ -513,6 +513,16 @@
         "selector": [
           {
             "filenamePattern": "**/.prompt-composer/*/*.prompt"
+          }
+        ],
+        "priority": "default"
+      },
+      {
+        "viewType": "promptComposer.claude",
+        "displayName": "Prompt Composer (Claude Code prompt)",
+        "selector": [
+          {
+            "filenamePattern": "**/claude-prompt-*/*.prompt"
           }
         ],
         "priority": "default"

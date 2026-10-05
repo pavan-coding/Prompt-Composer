@@ -164,14 +164,29 @@ This guide is for trying the extension by hand in VS Code's **Extension Developm
 
 ---
 
-## 9. Automated tests (what the AI ran)
+## 9. Claude Code's Ctrl+G
+
+Set up the helper once as in the [README](../README.md#claude-code-ctrlg-opens-the-prompt-here), install the extension (or run the debug window on your project), and start `claude` in that project.
+
+| # | Do this | You should see | ID |
+|---|---|---|---|
+| 1 | Type a prompt in Claude Code and press **Ctrl+G** | The terminal says it's editing in VS Code; VS Code shows the prompt in a composer tab titled with its first line, in the window open on that project | CL-01, CL-09 |
+| 2 | Add a line, an `@` mention and a pasted screenshot, then close the tab | No save question. The text is back in Claude's input with the mention and the image as `@paths` | CL-03, CL-09 |
+| 3 | Press **Ctrl+G** again, then **Esc** in the terminal | Claude keeps the prompt as it was; the VS Code tab can be closed without effect | CL-07, CL-09 |
+| 4 | Start `claude` in a subfolder of the open project and use Ctrl+G with an `@` mention | The mention comes back relative to that subfolder | CL-04 |
+| 5 | Look at the panel and `.prompt-composer/` afterwards | Claude's prompt isn't listed or saved there | CL-03 |
+
+---
+
+## 10. Automated tests (what the AI ran)
 
 | Command | What it runs | Last result |
 |---|---|---|
-| `npm run test:unit` | Vitest, in Node: Markdown round trips, naming, titles/search text, library model, fuzzy matching, speed | 89 passed |
-| `npm run test:integration` | Mocha inside a real Extension Development Host on a copy of the fixture workspace | 52 passed |
-| `npm run test:e2e` | Playwright driving a real VS Code window: typing, menus, dialogs, double-clicks, paste, reload, themes. Screenshots go to `test-results/e2e/<ID>/` | 40 passed, 1 skipped (SV-05: Playwright pretends the window always has focus, so section 3 row 8 is manual) |
+| `npm run test:unit` | Vitest, in Node: Markdown round trips, naming, titles/search text, library model, fuzzy matching, speed, `@path` rewriting for Claude, the Ctrl+G helper script (Linux) | 105 passed (v0.2.0, Ubuntu; the MN-12/PN-13 speed checks miss 30 ms in about one run in three) |
+| `npm run test:integration` | Mocha inside a real Extension Development Host on a copy of the fixture workspace | 58 passed (v0.2.0, Ubuntu) |
+| `npm run test:e2e` | Playwright driving a real VS Code window: typing, menus, dialogs, double-clicks, paste, reload, themes. Screenshots go to `test-results/e2e/<ID>/` | 40 passed, 1 skipped (SV-05: Playwright pretends the window always has focus, so section 3 row 8 is manual). v0.2.0 on Ubuntu: 39 passed (CL-08 new), 1 skipped, 2 failed (PN-03, PN-05, which fail the same way for v0.1.0 there) |
 | `npm run package` then `node test/e2e/vsix-smoke.mjs` | Installs the packaged `.vsix` into a throwaway profile and makes and saves a prompt with it | passed (441 KB package) |
+| `npm run package` then `node test/e2e/claude-smoke.mjs` | Claude Code's Ctrl+G end to end with the packaged `.vsix` in a throwaway profile: the helper, the real `code` CLI, typing and Ctrl+W (Linux/macOS) | passed (v0.2.0, Ubuntu) |
 | `npm test` | Unit, integration and end-to-end | |
 
 - **Which VS Code they use:** the integration and end-to-end tests download the latest stable VS Code into `.vscode-test/` on first run. Set `CODE_EXE` to use an installed one instead:

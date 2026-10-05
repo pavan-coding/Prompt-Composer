@@ -9,7 +9,7 @@ export function startTestBridge(api: PromptComposerApi, port: number, log: vscod
   const state = () => ({
     active: api.editors.activeDoc?.id,
     docs: api.editors.allDocs().map((d) => ({
-      id: d.id, rel: d.rel, title: d.title, dirty: d.dirty, open: !!d.panel, preview: d.preview, current: d.current, saved: d.savedText,
+      id: d.id, rel: d.rel, title: d.title, dirty: d.dirty, open: !!d.panel, preview: d.preview, current: d.current, saved: d.savedText, claude: !!d.claude,
     })),
     model: api.libraryView.model(),
     status: api.statusBar.texts(),

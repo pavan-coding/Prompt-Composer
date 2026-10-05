@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.0 (2026-10-05)
+
+### Claude Code's Ctrl+G opens in Prompt Composer
+
+- With the new helper [`claude-code/claude-prompt-composer`](claude-code/claude-prompt-composer) set as Claude Code's `VISUAL`, **Ctrl+G** in Claude Code opens the prompt you're typing in the composer. **Close the tab** and the text is back in Claude's input. **Esc** or **Ctrl+C** in the terminal cancels. Set-up: [README](README.md#claude-code-ctrlg-opens-the-prompt-here).
+- It opens in the VS Code window that has Claude's folder (or a folder above it) open, else in the window you used last, else in a new window on Claude's folder.
+- Claude's prompt stays in Claude's temp folder. It isn't saved in `.prompt-composer/`, isn't listed in the panel and never asks to be saved. Every edit is written straight back.
+- `@paths` are rewritten for the folder Claude runs in when VS Code is open on another one. Images become `@paths`, as with Copy as Prompt. An untouched prompt comes back exactly as Claude wrote it.
+- Revert Prompt goes back to Claude's text. The editor shortcuts (Ctrl+B, Ctrl+K, Ctrl+S…) work in that tab like in any prompt.
+- Your own prompts work exactly as before.
+
 ## 0.1.0 (2026-10-04)
 
 First release.

@@ -1,0 +1,118 @@
+#!/usr/bin/env bash
+# claude-prompt-composer: Claude Code's Ctrl+G editor. Opens the prompt in VS Code's Prompt Composer and hands
+# the text back to Claude when you close the tab.
+#
+# Set up once: put this file on your PATH (e.g. ~/.local/bin, executable), then in ~/.claude/settings.json:
+#     "env": { "VISUAL": "/home/<you>/.local/bin/claude-prompt-composer" }
+# Needs Prompt Composer 0.2.0 or later in VS Code, and VS Code's `code` command.
+#
+# How it works: Claude writes the prompt to <its temp folder>/claude-prompt-<id>.md, runs this with that path,
+# waits for it to exit and reads the file back. This copies the prompt to claude-prompt-<id>/<name>.prompt,
+# which Prompt Composer edits in its own tab, writing every change straight back, and runs `code --wait` on it.
+# Closing the tab ends `code --wait`; Prompt Composer then drops a .done file and the text goes back to Claude.
+#
+# Which window: the one open on Claude's folder (or a folder above it); otherwise the VS Code window you used
+# last; with none open, a new window on Claude's folder.
+# Esc or Ctrl+C in the terminal cancels: Claude keeps the prompt it had.
+# Any other file (a git commit message, say) goes to $EDITOR as before.
+set -u
+
+file=${!#}
+name=${file##*/}
+
+fallback() {
+  local editor=${EDITOR:-}
+  case ${editor##*/} in '' | claude-prompt-composer*) editor=$(command -v nano || command -v vi) ;; esac
+  # unquoted on purpose: $EDITOR may carry flags, like "code --wait"
+  exec $editor "$@"
+}
+if (($# < 1)) || [[ ! -f $file || $name != claude-prompt-*.md ]] || ! command -v code >/dev/null; then
+  fallback "$@"
+fi
+
+work=${file%.md}
+prompt="$work/Claude - ${PWD##*/}.prompt" # the tab shows this name
+saved_tty=
+restore_tty() { [[ -n $saved_tty ]] && stty "$saved_tty" 2>/dev/null </dev/tty; }
+mkdir -p -- "$work" || exit 1
+trap 'restore_tty; rm -rf -- "$work"' EXIT
+trap 'exit 1' HUP TERM
+
+# Claude can put its last response above the prompt, as "# " lines ending in a marker line. Claude drops that
+# part when it reads the file back, so the editor gets only the prompt.
+marker='# ─── Write your reply below this line'
+if grep -q "^$marker" -- "$file"; then
+  awk -v m="$marker" '
+    body { if (!started && $0 == "") { started = 1; next } started = 1; print; next }
+    index($0, m) == 1 { body = 1 }' "$file" >"$prompt"
+else
+  cp -- "$file" "$prompt"
+fi
+printf '%s' "$PWD" >"$work/.cwd" # Prompt Composer writes @paths relative to it
+
+# Each VS Code window with Prompt Composer writes <extension host pid> = folder, then what `code` opens to
+# reach it; the file is rewritten when the window gains focus. Pick the deepest folder holding Claude's folder,
+# else the window used last.
+registry=${XDG_CACHE_HOME:-$HOME/.cache}/prompt-composer/windows
+here=$PWD
+real=$(pwd -P)
+target= depth=0 newest= newest_open=
+for entry in "$registry"/*; do
+  [[ -f $entry ]] || continue
+  if ! kill -0 "${entry##*/}" 2>/dev/null; then
+    rm -f -- "$entry"
+    continue
+  fi
+  root= open=
+  { IFS= read -r root; IFS= read -r open; } <"$entry"
+  [[ -n $root ]] || continue
+  [[ -n $open ]] || open=$root
+  for dir in "$here" "$real"; do
+    if [[ $dir/ == "${root%/}/"* ]] && ((${#root} > depth)); then
+      target=$open
+      depth=${#root}
+    fi
+  done
+  if [[ -z $newest || $entry -nt $newest ]]; then
+    newest=$entry
+    newest_open=$open
+  fi
+done
+[[ -n $target ]] || target=${newest_open:-$PWD}
+
+code --wait "$target" "$prompt" >/dev/null 2>&1 &
+code_pid=$!
+
+printf '\n  Editing the prompt in VS Code (Prompt Composer).\n'
+printf '  Close its tab to send it back to Claude.    Esc or Ctrl+C here: cancel\n\n'
+
+# Keys come in one at a time, unechoed, each read giving up after 0.3 s. Ctrl+C arrives as a key instead of
+# interrupting Claude (bash's own `read -n` would turn signals back on, hence dd).
+saved_tty=$(stty -g 2>/dev/null </dev/tty)
+[[ -n $saved_tty ]] && stty -echo -icanon -isig min 0 time 3 2>/dev/null </dev/tty
+cancelled=0
+while kill -0 "$code_pid" 2>/dev/null; do
+  if [[ -z $saved_tty ]]; then
+    sleep 0.3 # no terminal: just wait for the tab to close
+    continue
+  fi
+  key=$(dd bs=1 count=1 2>/dev/null </dev/tty)
+  [[ $key == $'\x03' ]] && { cancelled=1; break; }
+  # a lone Esc cancels; arrow keys and the like are Esc followed by more
+  [[ $key == $'\e' && -z $(dd bs=8 count=1 2>/dev/null </dev/tty) ]] && { cancelled=1; break; }
+done
+restore_tty
+
+if ((cancelled)); then
+  kill "$code_pid" 2>/dev/null
+  exit 0 # Claude reads its own file back, untouched
+fi
+wait "$code_pid" || { echo "claude-prompt-composer: 'code --wait' failed" >&2; exit 1; }
+
+# Prompt Composer writes .done after the last edit is on disk. Without it (an older Prompt Composer, or the
+# file opened as plain text in a window without it) the file is taken as it is.
+for _ in {1..30}; do
+  [[ -e $work/.done ]] && break
+  sleep 0.1
+done
+cp -- "$prompt" "$file"

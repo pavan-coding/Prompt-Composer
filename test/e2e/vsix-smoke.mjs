@@ -21,6 +21,7 @@ writeFileSync(join(ud, 'User', 'settings.json'), JSON.stringify(BASE_SETTINGS));
 const cliJs = [join(dirname(exe), 'resources', 'app', 'out', 'cli.js'), ...readdirSync(dirname(exe)).map((d) => join(dirname(exe), d, 'resources', 'app', 'out', 'cli.js'))].find((f) => existsSync(f));
 const env = { ...process.env };
 for (const k of Object.keys(env)) if (/^(VSCODE_|ELECTRON_)/i.test(k)) delete env[k];
+env.XDG_CACHE_HOME = join(tmp, 'cache'); // the window registry for Claude Code's Ctrl+G: never your real one
 execFileSync(exe, [cliJs, '--extensions-dir', ext, '--user-data-dir', ud, '--install-extension', join(root, vsix)], { env: { ...env, ELECTRON_RUN_AS_NODE: '1' }, stdio: 'inherit' });
 const { ws } = prepareWorkspace();
 const app = await _electron.launch({

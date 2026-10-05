@@ -1,6 +1,7 @@
 // The end-to-end tests (see run.mjs). Each one drives the real VS Code UI.
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -879,6 +880,36 @@ export const tests = [
         await vsc.app.evaluate(({ BrowserWindow }) => { globalThis.__pcOther?.destroy(); const w = BrowserWindow.getAllWindows()[0]; w.setAlwaysOnTop(true); w.focus(); w.setAlwaysOnTop(false); });
         await setting(vsc, 'files', 'autoSave', undefined);
       }
+    },
+  },
+  {
+    name: "CL-08 Claude Code's prompt: typing and shortcuts work, the file follows every edit, closing hands it back",
+    async fn({ vsc, shot }) {
+      const work = join(mkdtempSync(join(tmpdir(), 'pc-claude-e2e-')), 'claude-prompt-e2e');
+      mkdirSync(work);
+      const file = join(work, 'Claude - ws.prompt');
+      writeFileSync(file, 'Start\n');
+      writeFileSync(join(work, '.cwd'), vsc.ws);
+      await vsc.call('POST', '/openFile', { path: file });
+      await vsc.waitFor(async () => (await vsc.state()).docs.some((d) => d.claude && d.open), 15_000, "Claude's prompt");
+      await vsc.editorFrame().locator('.ProseMirror', { hasText: 'Start' }).waitFor({ timeout: 15_000 });
+      await vsc.focusEditor();
+      const sidebarVisible = () => vsc.page.locator('#workbench\\.parts\\.sidebar').isVisible();
+      const before = await sidebarVisible();
+      await vsc.press('Control+End');
+      await vsc.type(' and ');
+      await vsc.press('Control+b');
+      await vsc.type('bold');
+      await vsc.press('Control+b');
+      await vsc.waitFor(() => readFileSync(file, 'utf8') === 'Start and **bold**\n', 8000, 'the file to follow the edit')
+        .catch((e) => { throw new Error(`${e.message}; file is ${JSON.stringify(readFileSync(file, 'utf8'))}`); });
+      assert.equal(await sidebarVisible(), before, 'Ctrl+B formats instead of toggling the side bar');
+      await shot('claude-prompt');
+      await vsc.command('workbench.action.closeActiveEditor');
+      await vsc.waitFor(() => existsSync(join(work, '.done')), 8000, '.done');
+      assert.equal(await vsc.page.locator('.monaco-dialog-box').count(), 0, 'no save question');
+      assert.equal(readFileSync(file, 'utf8'), 'Start and **bold**\n');
+      assert.ok(!(await vsc.state()).docs.some((d) => d.claude), 'nothing left behind');
     },
   },
   {

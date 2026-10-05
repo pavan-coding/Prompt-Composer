@@ -415,6 +415,19 @@ Only Prompt Composer writes into `.prompt-composer/`, which keeps this simple:
 - **A small file watcher on `.prompt-composer/`** only notices files deleted or moved by hand in the Explorer, and updates the panel.
 - **One tab per prompt.** Opening a prompt that's already open focuses its tab, and "Open to the Side" moves that tab to the side group. Two live copies of one prompt would need a sync engine for little gain.
 
+### F5. Claude Code's Ctrl+G (v0.2)
+
+Claude Code's Ctrl+G writes the prompt being typed to `<its temp folder>/claude-prompt-<id>.md`, runs `$VISUAL` (else `$EDITOR`) on it, waits for that program to exit and reads the file back. A non-zero exit means "keep the old prompt".
+
+- **The helper** `claude-code/claude-prompt-composer` is that program. It copies the prompt to `claude-prompt-<id>/Claude - <folder>.prompt`, writes Claude's working directory to `.cwd` next to it, and runs `code --wait` on the file. When `code --wait` returns it waits for `.done` and copies the text back for Claude.
+- **Its own editor, not the redirect.** The redirect editor closes the file's tab at once and opens a separate panel, so `code --wait` would return immediately. A second custom editor, `promptComposer.claude`, selector `**/claude-prompt-*/*.prompt`, hosts the composer in the file's own tab. `code --wait` follows that tab, so it returns exactly when the tab closes.
+- **Nothing to save.** Every edit is written to the file at once, so the prompt is never dirty: no dot, no save question, no draft backup. Closing writes the last edit, then `.done`. It's never in `.prompt-composer/` or the panel.
+- **Claude's exact text** stays in the file until the prompt is edited, so an untouched prompt round-trips byte for byte (Claude matches pasted-text blocks by their exact content).
+- **`@paths` for Claude's folder.** Mentions are workspace-relative. When Claude runs in another folder, mentions of existing files are rewritten relative to it when inside it, absolute otherwise. Images become `@paths` as in Copy as Prompt. Code is left alone.
+- **Which window.** Each window with a folder writes `~/.cache/prompt-composer/windows/<extension host pid>`: its folder, then what `code` opens to reach it (the `.code-workspace` file or the folder). The file is rewritten when the window gains focus and removed when it closes. The helper picks the deepest folder holding Claude's folder, else the newest file (the window used last), else opens a new window on Claude's folder. Files of processes that are gone are dropped.
+- **Cancel** with Esc or Ctrl+C in the terminal: the helper exits 0 without touching Claude's file. The terminal is put in `-isig` mode while waiting, so Ctrl+C arrives as a key and doesn't interrupt Claude.
+- **Other files** given to the helper (a git commit message) go to `$EDITOR`, so setting `VISUAL` changes nothing else.
+
 ---
 
 ## 5. Suggested extras (my ideas, you decide)

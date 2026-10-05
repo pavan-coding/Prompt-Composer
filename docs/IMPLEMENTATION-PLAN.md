@@ -39,6 +39,10 @@ src/
     editorManager.ts      webview panels, preview tab, save/close/revert, auto-save modes, drafts backup
     redirectEditor.ts     custom editor for .prompt-composer/*/*.prompt → opens the composer instead
     html.ts               webview HTML with CSP, nonce, asset URIs
+  claude/
+    claudeEditor.ts       custom editor for Claude Code's Ctrl+G prompt (claude-prompt-*/*.prompt), in its own tab
+    claudePaths.ts        rewrites @paths for the folder Claude runs in (pure)
+    windowRegistry.ts     ~/.cache/prompt-composer/windows/<pid>: which window is open on which folder
   library/
     libraryView.ts        WebviewViewProvider for the side-bar panel
   untitled/
@@ -152,6 +156,26 @@ docs/
 - A `CustomReadonlyEditorProvider` (`promptComposer.redirect`), priority `default`, selector `**/.prompt-composer/*/*.prompt`. Prompt files have their own extension so `*.md` editor associations never compete with it; `contributes.languages` maps the same pattern to `markdown` for the read-only text view.
 - `resolveCustomEditor` calls `EditorManager.open(uri, { viewColumn })`, then disposes its own panel.
 - "Open as Text" uses `vscode.openWith(uri, 'default')`, then `workbench.action.files.setActiveEditorReadonlyInSession`.
+
+### Claude Code's Ctrl+G (v0.2)
+
+```
+Claude Code ──Ctrl+G──► claude-prompt-composer <tmp>/claude-prompt-<id>.md        (claude-code/, bash)
+                          ├─ copies it to claude-prompt-<id>/Claude - <folder>.prompt, writes .cwd
+                          ├─ picks a window from ~/.cache/prompt-composer/windows/
+                          └─ code --wait <window folder> <prompt>  ─────►  ClaudeEditorProvider (promptComposer.claude)
+                                                                            └─ EditorManager.openClaude(panel)
+                                 every `changed` ─► claudeText() ─► write the .prompt
+                                 tab closed      ─► last write, then .done
+                       ◄── code --wait returns; wait for .done; copy the .prompt back to the .md; exit 0
+```
+
+- `ClaudeEditorProvider` is a `CustomReadonlyEditorProvider`, priority `default`, selector `**/claude-prompt-*/*.prompt`. Unlike the redirect it keeps its panel: `EditorManager.openClaude` attaches the prompt to the custom editor's own webview panel, so the tab stays bound to the file and `code --wait` returns when it closes. It's pinned at once (`workbench.action.keepEditor`), because a preview tab would be replaced, and so closed, by the next single-clicked file.
+- The prompt is a `PromptDoc` with `claude` set: `dirty` is always false (no dot, no close question, no draft), it's left out of `libraryItems()`, Ctrl+S just writes, Revert goes back to Claude's text (kept in `savedText`), and its images are never cleaned up on close.
+- `claudeText()` returns Claude's original text until the editor's Markdown differs from its first report (the baseline), so an untouched prompt round-trips exactly. After that it's `toPromptText()` (images → `@paths`), then `rebaseMentions()` when `.cwd` differs from the workspace folder. Writes are chained so they land in order; a missing folder (helper cancelled) is ignored.
+- Without a folder the provider shows a short note instead; closing it leaves Claude's prompt as it was.
+- `WindowRegistry` writes `<folder>\n<what code opens>\n` on activation and whenever the window gains focus, and removes it on dispose. It isn't started in test mode.
+- The keybindings and editor-title menus that used `activeWebviewPanelId == 'promptComposer.editor'` also accept `activeCustomEditorId == 'promptComposer.claude'`.
 
 ### `@` mentions
 
